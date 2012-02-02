@@ -1,42 +1,56 @@
+import datetime
+import time
+
+from sofiehdfformat.antparser.AntParser import parse_sample as ant_sample
+from sofiehdfformat.antparser.AntParser import parse_sample_interpret as ant_sample_interpret
+from sofiehdfformat.antpytableaccess.AntPyTableAccess import AntParsedDataAccess
+from sofiehdfformat.antpytableaccess.AntPyTableAccess import AntRawDataAccess
+from sofiehdfformat.core.config import SPARKSUBDIRECTORY
+EVENT_OPEN = '0-LOGOPEN'
+EVENT_CLOSE = '1-LOGCLOSE'
+EVENT_READ = '2-LOGREAD'
+EVENT_WRITE = '3-LOGWRITE'
+
 class LogWriter(object):
-    def __init__(self, filename=''):
-        self.packer = msgpack.Packer()
+    def __init__(self, filename='',run='test'):
         self.is_open = False
-        self.open(filename)
+        self.open(filename,run)
 
     def __del__(self):
         if self.is_open:
             self.fd.close()
+            self.fdP.close()
 
-    def open(self, filename=''):
+    def open(self, filename='',run='test'):
         if filename == '':
-            filename = datetime.datetime.now().isoformat() + '.ant'
+            filename = datetime.datetime.now().isoformat() + '.h5'
         self.filename = filename
 
         if self.is_open == True:
             self.close()
 
-        self.fd = open(filename, 'w')
+        self.fd = AntRawDataAccess(filename,run+'/'+SPARKSUBDIRECTORY)
+        self.fdP = AntParsedDataAccess(filename,run+'/'+SPARKSUBDIRECTORY)
+
         self.is_open = True
-        self.packer = msgpack.Packer()
-
-        header = ['ANT-LOG', 0x01]  # [MAGIC, VERSION]
-        self.fd.write(self.packer.pack(header))
-
+        #TODO write meta information...
+        
     def close(self):
         if self.is_open:
             self.fd.close()
+            self.fdP.close()
             self.is_open = False
 
     def _logEvent(self, event, data=None):
-        ev = [event, int(time.time()), data]
-
-        if data is None:
-            ev = ev[0:-1]
-        elif len(data) == 0:
-            return
-
-        self.fd.write(self.packer.pack(ev))
+        timestamp = int(time.time())
+        if event == EVENT_READ:
+            information = {'packet':data,'timestamp':timestamp}
+            informationRaw = ant_sample(information)
+            informationParsed = ant_sample_interpret(informationRaw)
+            self.fd.write(informationRaw)
+            self.fdP.write(informationParsed)
+        else:
+            print event
 
     def logOpen(self):
         self._logEvent(EVENT_OPEN)

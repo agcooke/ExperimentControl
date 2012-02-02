@@ -1,3 +1,4 @@
+#!/usr/bin/python
 __author__="cooke"
 __date__ ="$02-Feb-2012 15:26:23$"
 
@@ -12,9 +13,16 @@ import time
 
 from ant.core import driver
 from ant.core import event
-from ant.core.constants import *
-from ant.core.message import *
-
+from ant.core.constants import RESPONSE_NO_ERROR
+from ant.core.message import ChannelAssignMessage
+from ant.core.message import ChannelFrequencyMessage
+from ant.core.message import ChannelIDMessage
+from ant.core.message import ChannelOpenMessage
+from ant.core.message import ChannelPeriodMessage
+from ant.core.message import ChannelSearchTimeoutMessage
+from ant.core.message import NetworkKeyMessage
+from ant.core.message import SystemResetMessage
+from antpluslistener.core import SofieHdfFormatLogWriter
 # USB1 ANT stick interface. Running `dmesg | tail -n 25` after plugging the
 # stick on a USB port should tell you the exact interface.
 SERIAL = '/dev/ttyUSB0'
