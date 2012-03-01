@@ -15,16 +15,18 @@ EVENT_READ = '2-LOGREAD'
 EVENT_WRITE = '3-LOGWRITE'
 
 class LogWriter(object):
-    def __init__(self, filename='',run='test'):
+    previousParsedValue = None;
+
+    def __init__(self, filename='',runName='test'):
         self.is_open = False
-        self.open(filename,run)
+        self.open(filename,runName)
 
     def __del__(self):
         if self.is_open:
             self.fd.close()
             self.fdP.close()
 
-    def open(self, filename='',run='test'):
+    def open(self, filename='',runName='test'):
         if filename == '':
             filename = datetime.datetime.now().isoformat() + '.h5'
         self.filename = filename
@@ -32,8 +34,8 @@ class LogWriter(object):
         if self.is_open == True:
             self.close()
 
-        self.fd = AntRawDataAccess(filename,run+'/'+SPARKSUBDIRECTORY)
-        self.fdP = AntParsedDataAccess(filename,run+'/'+SPARKSUBDIRECTORY)
+        self.fd = AntRawDataAccess(filename,runName+'/'+SPARKSUBDIRECTORY)
+        self.fdP = AntParsedDataAccess(filename,runName+'/'+SPARKSUBDIRECTORY)
 
         self.is_open = True
         #TODO write meta information...
@@ -45,19 +47,26 @@ class LogWriter(object):
             self.is_open = False
 
     def _logEvent(self, event, data=None):
-        timestamp = int(time.time())
-        if event == EVENT_READ:
+        timestamp = time.time()
+        if event == EVENT_READ and len(data)>0:
+            #logging.debug(len(data))
             information = {'packet':data,'timestamp':timestamp}
             try:
+                #logging.debug(information)
                 informationRaw = ant_sample(information)
-                logging.debug(informationRaw)
-                informationParsed = ant_sample_interpret(informationRaw)
+                if informationRaw == []:
+                    logging.debug('NOT A BROADCAST')
+                    return
+                logging.debug('Information Raw:'+str(informationRaw))
+                informationParsed = ant_sample_interpret(informationRaw,\
+                    self.previousParsedValue)
+                self.previousParsedValue = informationParsed
                 self.fd.write(informationRaw)
                 self.fdP.write(informationParsed)
             except exceptions.UnknownParseError,e:
-                logging.debug('Error parsing sample:'+e.message)
-        else:
-            print event
+                pass
+            except exceptions.ChecksumParseError,e:
+                logging.debug('CHECKSUM ERROR:'+e.message)
 
     def logOpen(self):
         self._logEvent(EVENT_OPEN)
