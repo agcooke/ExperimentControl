@@ -1,11 +1,14 @@
 import datetime
+import logging
 import time
 
 from sofiehdfformat.antparser.AntParser import parse_sample as ant_sample
 from sofiehdfformat.antparser.AntParser import parse_sample_interpret as ant_sample_interpret
 from sofiehdfformat.antpytableaccess.AntPyTableAccess import AntParsedDataAccess
 from sofiehdfformat.antpytableaccess.AntPyTableAccess import AntRawDataAccess
+import sofiehdfformat.core.SofieHdfFormatExceptions as exceptions
 from sofiehdfformat.core.config import SPARKSUBDIRECTORY
+
 EVENT_OPEN = '0-LOGOPEN'
 EVENT_CLOSE = '1-LOGCLOSE'
 EVENT_READ = '2-LOGREAD'
@@ -45,10 +48,14 @@ class LogWriter(object):
         timestamp = int(time.time())
         if event == EVENT_READ:
             information = {'packet':data,'timestamp':timestamp}
-            informationRaw = ant_sample(information)
-            informationParsed = ant_sample_interpret(informationRaw)
-            self.fd.write(informationRaw)
-            self.fdP.write(informationParsed)
+            try:
+                informationRaw = ant_sample(information)
+                logging.debug(informationRaw)
+                informationParsed = ant_sample_interpret(informationRaw)
+                self.fd.write(informationRaw)
+                self.fdP.write(informationParsed)
+            except exceptions.UnknownParseError,e:
+                logging.debug('Error parsing sample:'+e.message)
         else:
             print event
 

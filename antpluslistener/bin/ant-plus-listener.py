@@ -8,6 +8,8 @@ an ANT+ Bicycle cadence and speed senser, using raw messages
 and event handlers.
 
 """
+import logging
+import optparse
 import sys
 import time
 
@@ -22,7 +24,10 @@ from ant.core.message import ChannelPeriodMessage
 from ant.core.message import ChannelSearchTimeoutMessage
 from ant.core.message import NetworkKeyMessage
 from ant.core.message import SystemResetMessage
-from antpluslistener.core import SofieHdfFormatLogWriter
+from antpluslistener.core.SofieHdfFormatLogWriter import LogWriter
+from antpluslistener.core.antlogging import setLogger
+
+
 # USB1 ANT stick interface. Running `dmesg | tail -n 25` after plugging the
 # stick on a USB port should tell you the exact interface.
 SERIAL = '/dev/ttyUSB0'
@@ -35,7 +40,7 @@ DEBUG = True
 
 # Set to None to disable logging
 #LOG = None
-LOG = SofieHdfFormatLogWriter.LogWriter()
+LOG = LogWriter()
 
 # ========== DO NOT CHANGE ANYTHING BELOW THIS LINE ==========
 print "Using log file:", LOG.filename
@@ -47,6 +52,20 @@ class MyCallback(event.EventCallback):
         print msg
 
 if __name__ == '__main__':
+    usage = """usage: %prog [options] arg1
+This package is used log data from the sparkfun usb stick
+    """
+    parser = optparse.OptionParser(usage=usage)
+    parser.add_option('--verbose', '-v', action="store_true", dest="verbose",
+        default=False,help="Enable verbose mode.")
+    options, arguments = parser.parse_args()
+    if options.verbose:
+        print 'DEBUG MODE'
+        setLogger(logging.DEBUG)
+        logging.debug('Enabled DEBUG MODE')
+
+
+
     NETKEY = '\xB9\xA5\x21\xFB\xBD\x72\xC3\x45'
     # Initialize driver
     stick = driver.USB1Driver(SERIAL, log=LOG, debug=DEBUG,baud_rate=4800)

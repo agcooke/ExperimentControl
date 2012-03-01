@@ -4,7 +4,6 @@ from setuptools import setup, find_packages
 import os
 if os.name == 'nt':
     import py2exe
-
 setup (
   name = 'antplustlistener',
   version = '0.1',
@@ -12,10 +11,10 @@ setup (
   install_requires=['sofiehdfformat'],
   author = 'AntPlusListener Team',
   author_email = 'adrian "dot" cooke {at} u t wente <dot> nl',
-  description = 'Data conversion software.',
+  description = 'USB Ant plust listener.',
   url = 'https://github.com/agcooke/antpluslistener',
   license = open('LICENSE.md').read(),
   long_description=open('README.md').read(),
-  scripts = [os.path.join('antpluslistener','bin','antpluslistener.py')],
-  console = [os.path.join('antpluslistener','bin','antpluslistener.py')]
+  scripts = [os.path.join('antpluslistener','bin','ant-plus-listener.py')],
+  console = [os.path.join('antpluslistener','bin','ant-plus-listener.py')]
 )
