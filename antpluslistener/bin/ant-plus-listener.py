@@ -131,7 +131,7 @@ This package is used log data from the sparkfun usb stick
         sys.exit()
         
     print "\n\n-------------------------------\n:"
-    print "Listening for ANT events"
+    print "Listening for ANT events: Press CTRL+C to Exit."
     print "\n\n-------------------------------\n"
     try:
         while 1:
