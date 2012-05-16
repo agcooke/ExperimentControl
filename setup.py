@@ -5,16 +5,16 @@ import os
 if os.name == 'nt':
     import py2exe
 setup (
-  name = 'antplustlistener',
+  name = 'ExperimentControl',
   version = '0.1',
   packages = find_packages(),
   install_requires=['sofiehdfformat'],
-  author = 'AntPlusListener Team',
+  author = 'ExperimentControl Team',
   author_email = 'adrian "dot" cooke {at} u t wente <dot> nl',
-  description = 'USB Ant plust listener.',
-  url = 'https://github.com/agcooke/antpluslistener',
+  description = 'USB Ant plust listener, IMU listerner and experiment run organiser.',
+  url = 'https://github.com/agcooke/ExperimentControl',
   license = open('LICENSE.md').read(),
   long_description=open('README.md').read(),
-  scripts = [os.path.join('antpluslistener','bin','ant-plus-listener.py')],
-  console = [os.path.join('antpluslistener','bin','ant-plus-listener.py')]
+  scripts = [os.path.join('experimentcontrol','bin','experimentcontrol.py')],
+  console = [os.path.join('experimentcontrol','bin','experimentcontrol.py')]
 )

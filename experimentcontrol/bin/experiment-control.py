@@ -24,12 +24,10 @@ from ant.core.message import ChannelPeriodMessage
 from ant.core.message import ChannelSearchTimeoutMessage
 from ant.core.message import NetworkKeyMessage
 from ant.core.message import SystemResetMessage
-from antpluslistener.core.SofieHdfFormatLogWriter import LogWriter
-from antpluslistener.core.antlogging import setLogger
-# USB1 ANT stick interface. Running `dmesg | tail -n 25` after plugging the
-# stick on a USB port should tell you the exact interface.
+from experimentcontrol.core.SofieHdfFormatLogWriter import LogWriter
+from experimentcontrol.core.antlogging import setLogger
 NETKEY = '\xB9\xA5\x21\xFB\xBD\x72\xC3\x45'
-# ========== DO NOT CHANGE ANYTHING BELOW THIS LINE ==========
+
 # Event callback
 class MyCallback(event.EventCallback):
     def process(self, msg):
