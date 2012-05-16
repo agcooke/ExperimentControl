@@ -1,0 +1,2 @@
+class CouldNotConnectToSocket(Exception):
+    pass
