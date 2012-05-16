@@ -28,7 +28,6 @@ from antpluslistener.core.SofieHdfFormatLogWriter import LogWriter
 from antpluslistener.core.antlogging import setLogger
 # USB1 ANT stick interface. Running `dmesg | tail -n 25` after plugging the
 # stick on a USB port should tell you the exact interface.
-SERIAL = '/dev/ttyUSB0'
 NETKEY = '\xB9\xA5\x21\xFB\xBD\x72\xC3\x45'
 # ========== DO NOT CHANGE ANYTHING BELOW THIS LINE ==========
 # Event callback
@@ -47,6 +46,8 @@ This package is used log data from the sparkfun usb stick
         default=False,help="Enable verbose mode.")
     parser.add_option('--runname', '-t', default=None,
         help="The Run that you are doing.")
+    parser.add_option('--serial', '-s', default='/dev/ttyUSB0',
+        help="Serial Device of the ANT Stick.")
     options, arguments = parser.parse_args()
     if options.verbose:
         ch = setLogger(DEBUGLEVEL=logging.DEBUG)
@@ -64,7 +65,7 @@ This package is used log data from the sparkfun usb stick
     theLogger = LogWriter(filename=options.outfile,runName=options.runname)
         
     # Initialize driver
-    stick = driver.USB1Driver(SERIAL, log=theLogger,
+    stick = driver.USB1Driver(options.serial, log=theLogger,
         debug=DEBUG,baud_rate=4800)
     stick.open()
 
