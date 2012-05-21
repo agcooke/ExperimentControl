@@ -56,17 +56,29 @@ This package is used log data from the sparkfun usb stick
 
     logging.debug('Creating InertiaTechnoogyListener:')
     if options.serialimu:
+        print "\n\n-------------------------------\n:"
+        print "IMU ENABLED"
+        print "\n\n-------------------------------\n"
         intertiaTechnologyListener = IntertiaTechnologyListener(
             options.outfile,options.runname,
             options.imuport,options.imuhost,options.serialimu)
         intertiaTechnologyListener.open()
 
     if options.serialant:
+        print "\n\n-------------------------------\n:"
+        print "ANT ENABLED"
+        print "\n\n-------------------------------\n"
         antPlusListener = AntPlusListener(options.outfile,
             options.runname,
             options.serialant)
         antPlusListener.open()
-    
+    print "\n\n-------------------------------\n:"
+    print "SETUP LOGGING"
+    print "\n\n-------------------------------\n"
+    sleep(5)
+    print "\n\n-------------------------------\n:"
+    print "START EXPERIMENT"
+    print "\n\n-------------------------------\n"
     try:
         while 1:
             command=input()
@@ -74,16 +86,28 @@ This package is used log data from the sparkfun usb stick
             logging.debug('The command: "'+str(command)+'"')
             if command==1:
                 if options.serialimu:
+                    print "\n\n-------------------------------\n:"
+                    print "IMU SYNC"
+                    print "\n\n-------------------------------\n"
                     intertiaTechnologyListener.sync()
                 if options.serialant:
+                    print "\n\n-------------------------------\n:"
+                    print "ANT SYNC"
+                    print "\n\n-------------------------------\n"
                     antPlusListener.sync()
     except KeyboardInterrupt:
         pass;
-
-    if options.serialimu:
-        intertiaTechnologyListener.close()
+    print "\n\n-------------------------------\n:"
+    print "EXPERIMENT STOPPED"
+    print "\n\n-------------------------------\n"
+    sleep(5)
+    print "\n\n-------------------------------\n:"
+    print "SHUTTING DOWN"
+    print "\n\n-------------------------------\n"
     if options.serialant:
         antPlusListener.close()
+    if options.serialimu:
+        intertiaTechnologyListener.close()
     print "\n\n-------------------------------\n:"
-    print "EXITING"
+    print "EXITING (CAN NOW MOVE)"
     print "\n\n-------------------------------\n"

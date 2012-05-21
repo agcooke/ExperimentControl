@@ -47,7 +47,7 @@ class InertiaTechnologySocketDriver (object):
         else:
             existBehaviour = 0
         if os.path.isfile(logFilename):
-            os.path.unlink(logFilename)
+            os.unlink(logFilename)
         CMD='open {0} -l {1}  --existBehaviour {2}\n'.format(self.device,
             logFilename,
             existBehaviour)
@@ -71,13 +71,9 @@ class InertiaTechnologySocketDriver (object):
         self._writeCommand(CMD)
 
     def rtcTrigger(self):
-        CMD='cmd ServiceSendEvent --sampler 9 --event 1 \n'
+        CMD='cmd ServiceSendEvent --sampler 9 --event 1\n'
         self._writeCommand(CMD)
     
     def setRtc(self):
         CMD='cmd ServiceSetRTC\n'
         self._writeCommand(CMD)
-
-
-
-

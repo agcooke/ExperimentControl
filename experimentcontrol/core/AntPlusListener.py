@@ -125,3 +125,5 @@ class AntPlusListener(object):
         time.sleep(1)
         self.evm.stop()
         self.stick.close()
+    def sync(self):
+        print 'ANT SYNC NOT IMPLEMENTED'
