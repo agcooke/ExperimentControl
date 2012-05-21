@@ -7,6 +7,7 @@ an ANT+ Bicycle cadence and speed senser, using raw messages
 and event handlers.
 
 """
+import logging
 import os
 
 from experimentcontrol.core.InertiaTechnologySocketDriver import InertiaTechnologySocketDriver
@@ -24,6 +25,7 @@ class IntertiaTechnologyListener(object):
             mode='w')
         self.outfile = outfile;
         self.runName = runName;
+        logging.debug('Opening Socket')
         self.driver.open();
 
     def __del__(self):

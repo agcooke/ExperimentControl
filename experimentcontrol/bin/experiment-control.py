@@ -13,7 +13,6 @@ import optparse
 import time
 
 from ant.core import event
-from experimentcontrol.core.AntPlusListener import AntPlusListener
 from experimentcontrol.core.InertiaTechnologyListener import IntertiaTechnologyListener
 from experimentcontrol.core.antlogging import setLogger
 NETKEY = '\xB9\xA5\x21\xFB\xBD\x72\xC3\x45'
@@ -44,11 +43,10 @@ This package is used log data from the sparkfun usb stick
         help="The host for the IMU socket server.")
     options, arguments = parser.parse_args()
     if options.verbose:
-        ch = setLogger(DEBUGLEVEL=logging.DEBUG)
-        logging.getLogger().setLevel(logging.DEBUG)
-        logging.getLogger().addHandler(ch)
-        logging.debug("TEST")
-    DEBUG=True
+        setLogger(logging.DEBUG)
+        print "VERBOSE MODE."
+        logging.debug('Enabled DEBUG MODE')
+        DEBUG=True
     if(options.outfile==None):
         print "Specify the out file (--outfile filename)"
         exit()
@@ -59,10 +57,12 @@ This package is used log data from the sparkfun usb stick
     #antPlusListener = AntPlusListener(options.outfile,
     #    options.runname,
     #    options.serialant)
+    logging.debug('Creating InertiaTechnoogyListener:')
     intertiaTechnologyListener = IntertiaTechnologyListener(
         options.outfile,options.runname,
         options.imuport,options.imuhost,options.serialimu)
     #antPlusListener.open()
+    intertiaTechnologyListener.open()
     try:
         while 1:
             time.sleep(100)

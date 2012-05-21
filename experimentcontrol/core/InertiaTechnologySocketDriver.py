@@ -1,6 +1,5 @@
+import logging
 import socket
-import time
-from experimentcontrol.core.Exceptions import CouldNotConnectToSocket
 class InertiaTechnologySocketDriver (object):
     def __init__(self,host='localhost',port=1234,device='/dev/ttyUSB0',
         mode='+'):
@@ -20,6 +19,7 @@ class InertiaTechnologySocketDriver (object):
         self.close()
 
     def open(self):
+        logging.debug('Opening socket')
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((self.host, self.port))
         #if self.is_open == True:
@@ -37,13 +37,14 @@ class InertiaTechnologySocketDriver (object):
         self.socket.sendall(command)
 
     def startRecording(self,logFilename):
+        logging.debug('SENDING START COMMAND TO GUI')
         if self.mode == '+':
             existBehaviour = 2;
         elif self.mode == 'a':
             existBehaviour = 1;
         else:
             existBehaviour = 0
-        CMD='open {0} -l {1}  --existBehaviour {2}'.format(self.device,
+        CMD='open {0} -l {1}  --existBehaviour {2}\n'.format(self.device,
             logFilename,
             existBehaviour)
 
@@ -51,7 +52,7 @@ class InertiaTechnologySocketDriver (object):
         self._writeCommand(CMD)
 
     def stopRecording(self):
-        CMD='close {0}'.format(self.device)
+        CMD='close {0}\n'.format(self.device)
         self._writeCommand(CMD)
 
 
