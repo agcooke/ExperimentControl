@@ -36,12 +36,17 @@ class IntertiaTechnologyListener(object):
         #Setup the logger:
         self.driver.startRecording(TMPLOGFILE);
 
+    def sync(self):
+        #Setup the logger:
+        self.driver.rtcTrigger();
+
 
     def close(self):
         self.driver.stopRecording();
-        importdata(TMPLOGFILE,
-            self.outfile, 
-            self.runName,
-            'description',
-            True,
-            False)
+        if os.path.isfile(TMPLOGFILE):
+            importdata(TMPLOGFILE,
+                self.outfile,
+                self.runName,
+                'description',
+                True,
+                False)

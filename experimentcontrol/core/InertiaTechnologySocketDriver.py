@@ -1,5 +1,7 @@
 import logging
+import os
 import socket
+from time import sleep
 class InertiaTechnologySocketDriver (object):
     def __init__(self,host='localhost',port=1234,device='/dev/ttyUSB0',
         mode='+'):
@@ -44,15 +46,36 @@ class InertiaTechnologySocketDriver (object):
             existBehaviour = 1;
         else:
             existBehaviour = 0
+        if os.path.isfile(logFilename):
+            os.path.unlink(logFilename)
         CMD='open {0} -l {1}  --existBehaviour {2}\n'.format(self.device,
             logFilename,
             existBehaviour)
 
         logging.debug(CMD)
         self._writeCommand(CMD)
+        sleep(1)
+        logging.debug('Enabling external triggers');
+        self.enableExternalRtcTrigger()
+        logging.debug('Setting RTC');
+        sleep(1)
+        self.setRtc()
+
 
     def stopRecording(self):
         CMD='close {0}\n'.format(self.device)
+        self._writeCommand(CMD)
+
+    def enableExternalRtcTrigger(self):
+        CMD='set RTCConfig --externalTrigger=true --enableSampling=false\n'
+        self._writeCommand(CMD)
+
+    def rtcTrigger(self):
+        CMD='cmd ServiceSendEvent --sampler 9 --event 1 \n'
+        self._writeCommand(CMD)
+    
+    def setRtc(self):
+        CMD='cmd ServiceSetRTC\n'
         self._writeCommand(CMD)
 
 

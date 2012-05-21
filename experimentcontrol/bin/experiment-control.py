@@ -10,9 +10,9 @@ and event handlers.
 """
 import logging
 import optparse
-import time
 
 from ant.core import event
+from experimentcontrol.core.AntPlusListener import AntPlusListener
 from experimentcontrol.core.InertiaTechnologyListener import IntertiaTechnologyListener
 from experimentcontrol.core.antlogging import setLogger
 NETKEY = '\xB9\xA5\x21\xFB\xBD\x72\xC3\x45'
@@ -33,12 +33,12 @@ This package is used log data from the sparkfun usb stick
         default=False,help="Enable verbose mode.")
     parser.add_option('--runname', '-t', default=None,
         help="The Run that you are doing.")
-    parser.add_option('--serialant', '-s', default='/dev/ttyUSB0',
+    parser.add_option('--serialant', '-s', default=None,
         help="Serial Device of the ANT Stick.")
-    parser.add_option('--serialimu', '-i', default='/dev/ttyUSB1',
+    parser.add_option('--serialimu', '-i', default=None,
         help="Serial Device of the IMU's.")
     parser.add_option('--imuport', '-p', default=1234,
-        help="The Port for the IMU socket server.")
+        help="The Port for the IMU socket server, defaults to 1234.")
     parser.add_option('--imuhost', '-m', default='localhost',
         help="The host for the IMU socket server.")
     options, arguments = parser.parse_args()
@@ -54,22 +54,36 @@ This package is used log data from the sparkfun usb stick
         print "Specify the rest run name (--runname 01CornerTestRun) "
         exit()
 
-    #antPlusListener = AntPlusListener(options.outfile,
-    #    options.runname,
-    #    options.serialant)
     logging.debug('Creating InertiaTechnoogyListener:')
-    intertiaTechnologyListener = IntertiaTechnologyListener(
-        options.outfile,options.runname,
-        options.imuport,options.imuhost,options.serialimu)
-    #antPlusListener.open()
-    intertiaTechnologyListener.open()
+    if options.serialimu:
+        intertiaTechnologyListener = IntertiaTechnologyListener(
+            options.outfile,options.runname,
+            options.imuport,options.imuhost,options.serialimu)
+        intertiaTechnologyListener.open()
+
+    if options.serialant:
+        antPlusListener = AntPlusListener(options.outfile,
+            options.runname,
+            options.serialant)
+        antPlusListener.open()
+    
     try:
         while 1:
-            time.sleep(100)
+            command=input()
+            #1=Trigger event for syncing.
+            logging.debug('The command: "'+str(command)+'"')
+            if command==1:
+                if options.serialimu:
+                    intertiaTechnologyListener.sync()
+                if options.serialant:
+                    antPlusListener.sync()
     except KeyboardInterrupt:
         pass;
-    intertiaTechnologyListener.close()
-    #antPlusListener.close()
+
+    if options.serialimu:
+        intertiaTechnologyListener.close()
+    if options.serialant:
+        antPlusListener.close()
     print "\n\n-------------------------------\n:"
     print "EXITING"
     print "\n\n-------------------------------\n"
