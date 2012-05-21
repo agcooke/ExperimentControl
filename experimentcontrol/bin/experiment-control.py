@@ -10,6 +10,7 @@ and event handlers.
 """
 import logging
 import optparse
+from time import sleep
 
 from ant.core import event
 from experimentcontrol.core.AntPlusListener import AntPlusListener
