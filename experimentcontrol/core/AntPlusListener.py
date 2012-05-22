@@ -45,10 +45,9 @@ class AntPlusListener(object):
     def open(self):
         #Setup the logger:
         theLogger = LogWriter(filename=self.outfile,runName=self.runName)
-        DEBUG=True
         # Initialize driver
         self.stick = driver.USB1Driver(self.serial, log=theLogger,
-            debug=DEBUG,baud_rate=4800)
+            baud_rate=4800)
         self.stick.open()
 
         # Initialize event machine
