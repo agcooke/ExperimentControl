@@ -82,20 +82,17 @@ This package is used log data from the sparkfun usb stick
     print "\n\n-------------------------------\n"
     try:
         while 1:
-            command=input()
+
+            command=raw_input('HIT ENTER TO SEND SYNC SIGNALS:')
+            logging.debug("raw_input = {0}".format(command));
             #1=Trigger event for syncing.
-            logging.debug('The command: "'+str(command)+'"')
-            if command==1:
-                if options.serialimu:
-                    print "\n\n-------------------------------\n:"
-                    print "IMU SYNC"
-                    print "\n\n-------------------------------\n"
-                    intertiaTechnologyListener.sync()
-                if options.serialant:
-                    print "\n\n-------------------------------\n:"
-                    print "ANT SYNC"
-                    print "\n\n-------------------------------\n"
-                    antPlusListener.sync()
+            logging.debug('SYNC')
+            if options.serialimu:
+                print "IMU SYNC"
+                intertiaTechnologyListener.sync()
+            if options.serialant:
+                print "ANT SYNC"
+                antPlusListener.sync()
     except KeyboardInterrupt:
         pass;
     print "\n\n-------------------------------\n:"
