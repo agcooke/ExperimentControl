@@ -40,13 +40,14 @@ class AntPlusListener(object):
         self.outfile = outfile;
         self.runName = runName;
         self.serial = serial;
+        self.logger = None;
 
 
     def open(self):
         #Setup the logger:
-        theLogger = LogWriter(filename=self.outfile,runName=self.runName)
+        self.logger = LogWriter(filename=self.outfile,runName=self.runName)
         # Initialize driver
-        self.stick = driver.USB1Driver(self.serial, log=theLogger,
+        self.stick = driver.USB1Driver(self.serial, log=self.logger,debug=True,
             baud_rate=4800)
         self.stick.open()
 
@@ -125,4 +126,5 @@ class AntPlusListener(object):
         self.evm.stop()
         self.stick.close()
     def sync(self):
-        print 'ANT SYNC NOT IMPLEMENTED'
+        print 'ANT SYNCING'
+        self.logger.sync()

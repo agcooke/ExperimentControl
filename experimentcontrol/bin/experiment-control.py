@@ -74,11 +74,15 @@ This package is used log data from the sparkfun usb stick
             options.serialant)
         antPlusListener.open()
     print "\n\n-------------------------------\n:"
-    print "SETUP LOGGING"
+    print "LOGGING SETUP: CALLIBRATION STILL PERIOD STARTS"
     print "\n\n-------------------------------\n"
-    sleep(5)
+    i=5;
+    while i>0:
+        sleep(1)
+        i -= 1
+        print '.'
     print "\n\n-------------------------------\n:"
-    print "START EXPERIMENT"
+    print "YOU CAN NOW START THE  EXPERIMENT"
     print "\n\n-------------------------------\n"
     try:
         while 1:
@@ -96,15 +100,17 @@ This package is used log data from the sparkfun usb stick
     except KeyboardInterrupt:
         pass;
     print "\n\n-------------------------------\n:"
-    print "EXPERIMENT STOPPED"
+    print "EXPERIMENT STOPPED: STILL PERIOD AT END STARTING"
     print "\n\n-------------------------------\n"
     sleep(5)
     print "\n\n-------------------------------\n:"
     print "SHUTTING DOWN"
     print "\n\n-------------------------------\n"
     if options.serialant:
+        print "CLOSING ANT"
         antPlusListener.close()
     if options.serialimu:
+        print "CLOSING IMU"
         intertiaTechnologyListener.close()
     print "\n\n-------------------------------\n:"
     print "EXITING (CAN NOW MOVE)"
