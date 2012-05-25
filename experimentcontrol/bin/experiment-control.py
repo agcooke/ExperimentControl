@@ -113,5 +113,5 @@ This package is used log data from the sparkfun usb stick
         print "CLOSING IMU"
         intertiaTechnologyListener.close()
     print "\n\n-------------------------------\n:"
-    print "EXITING (CAN NOW MOVE)"
+    print "EXITING (YOU CAN NOW MOVE):"+options.runname+' completed.'
     print "\n\n-------------------------------\n"
