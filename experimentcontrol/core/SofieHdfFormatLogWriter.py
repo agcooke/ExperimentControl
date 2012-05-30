@@ -79,3 +79,6 @@ class LogWriter(object):
 
     def logWrite(self, data):
         self._logEvent(EVENT_WRITE, data)
+
+    def sync(self):
+        self.fd.writeSync();
