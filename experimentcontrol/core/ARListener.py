@@ -11,7 +11,7 @@ class ARListener(object):
             'ar_sofiehdfformat_bridge',
             'simple_bridge.launch',
             'filename:='+outfile, 
-            'runname:='+runName, 
+            'runname:='+runName+'/ar/csvimport', 
             'videodevice:='+videoDevice, 
             ];
         
