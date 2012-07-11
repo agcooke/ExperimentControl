@@ -54,12 +54,14 @@ class InertiaTechnologySocketDriver (object):
 
         logging.debug(CMD)
         self._writeCommand(CMD)
-        sleep(1)
+        sleep(0.5)
+        self.setRtc()
+        sleep(0.5)
         logging.debug('Enabling external triggers');
         self.enableExternalRtcTrigger()
         logging.debug('Setting RTC');
-        sleep(1)
-        self.setRtc()
+        
+        
 
 
     def stopRecording(self):
