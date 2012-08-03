@@ -15,19 +15,22 @@ class InertiaTechnologySocketDriver (object):
         self.port = int(port)
         self.device = device
         self.mode = mode
-        self.open()
+        #self.open()
 
     def __del__(self):
         self.close()
 
     def open(self):
         logging.debug('Opening socket')
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((self.host, self.port))
-        #if self.is_open == True:
-        #    self.close()
-        self.is_open = True
-        
+        while self.is_open == False:
+            try:
+                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.socket.connect((self.host, self.port))
+                #if self.is_open == True:
+                #    self.close()
+                self.is_open = True
+            except socket.error:
+                logging.debug('RETRYING TO OPEN CONNECTION.')        
 
     def close(self):
         if self.is_open:
