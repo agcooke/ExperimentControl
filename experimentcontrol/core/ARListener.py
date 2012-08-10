@@ -9,7 +9,7 @@ class ARListener(object):
         self.processString = \
             ['roslaunch',
             'ar_sofiehdfformat_bridge',
-            'simple_bridge.launch',
+            'simple_bridge_normal.launch',
             'filename:='+outfile, 
             'runname:='+runName+'/ar/csvimport', 
             'videodevice:='+videoDevice, 

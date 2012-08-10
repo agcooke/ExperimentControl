@@ -88,7 +88,7 @@ This package is used log data from the sparkfun usb stick
     print "\n\n-------------------------------\n:"
     print "LOGGING SETUP: CALLIBRATION STILL PERIOD STARTS"
     print "\n\n-------------------------------\n"
-    i=5;
+    i=8;
     while i>0:
         sleep(1)
         i -= 1
