@@ -9,6 +9,7 @@ and event handlers.
 """
 import logging
 import os
+from subprocess import Popen
 
 from experimentcontrol.core.InertiaTechnologySocketDriver import InertiaTechnologySocketDriver
 from sofiehdfformat.core.SofieFileUtils import importdata
@@ -20,20 +21,24 @@ class IntertiaTechnologyListener(object):
     Used to start and stop the ant plus listener
     """
     def __init__(self,outfile,runName,port,host,serial):
+        self.processString = ['/usr/bin/ProMoveGUI','-p 1234'];
         self.driver = InertiaTechnologySocketDriver(
             host=host,port=port,device=serial,
             mode='w')
         self.outfile = outfile;
         self.runName = runName;
-        logging.debug('Opening Socket')
-        self.driver.open();
-
     def __del__(self):
         self.driver.close();
+        self.process.terminate()
 
 
     def open(self):
+        logging.debug('Executing command: '+str(self.processString))    
+        self.process = Popen(self.processString)
         #Setup the logger:
+        logging.debug('Opening Socket')
+        self.driver.open();
+
         self.driver.startRecording(TMPLOGFILE);
 
     def sync(self):
@@ -50,3 +55,4 @@ class IntertiaTechnologyListener(object):
                 'description',
                 True,
                 False)
+        self.process.terminate()

@@ -8,11 +8,12 @@ an ANT+ Bicycle cadence and speed senser, using raw messages
 and event handlers.
 
 """
+from ant.core import event
 import logging
 import optparse
 from time import sleep
 
-from ant.core import event
+from experimentcontrol.core.ARListener import ARListener
 from experimentcontrol.core.AntPlusListener import AntPlusListener
 from experimentcontrol.core.InertiaTechnologyListener import IntertiaTechnologyListener
 from experimentcontrol.core.antlogging import setLogger
@@ -42,6 +43,8 @@ This package is used log data from the sparkfun usb stick
         help="The Port for the IMU socket server, defaults to 1234.")
     parser.add_option('--imuhost', '-m', default='localhost',
         help="The host for the IMU socket server.")
+    parser.add_option('--ardevice', '-a', default='/deve/video0',
+        help="The camera to use for the ROS AR tracking.")
     options, arguments = parser.parse_args()
     if options.verbose:
         setLogger(logging.DEBUG)
@@ -64,6 +67,15 @@ This package is used log data from the sparkfun usb stick
             options.outfile,options.runname,
             options.imuport,options.imuhost,options.serialimu)
         intertiaTechnologyListener.open()
+        
+    if options.ardevice:
+        print "\n\n-------------------------------\n:"
+        print "AR ENABLED"
+        print "\n\n-------------------------------\n"
+        arListener = ARListener(
+            options.outfile,options.runname,
+            options.ardevice)
+        arListener.open()
 
     if options.serialant:
         print "\n\n-------------------------------\n:"
@@ -76,7 +88,7 @@ This package is used log data from the sparkfun usb stick
     print "\n\n-------------------------------\n:"
     print "LOGGING SETUP: CALLIBRATION STILL PERIOD STARTS"
     print "\n\n-------------------------------\n"
-    i=5;
+    i=8;
     while i>0:
         sleep(1)
         i -= 1
@@ -112,6 +124,9 @@ This package is used log data from the sparkfun usb stick
     if options.serialimu:
         print "CLOSING IMU"
         intertiaTechnologyListener.close()
+    if options.ardevice:
+        print "CLOSING AR"
+        arListener.close()
     print "\n\n-------------------------------\n:"
     print "EXITING (YOU CAN NOW MOVE):"+options.runname+' completed.'
     print "\n\n-------------------------------\n"
