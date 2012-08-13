@@ -43,7 +43,7 @@ This package is used log data from the sparkfun usb stick
         help="The Port for the IMU socket server, defaults to 1234.")
     parser.add_option('--imuhost', '-m', default='localhost',
         help="The host for the IMU socket server.")
-    parser.add_option('--ardevice', '-a', default='/deve/video0',
+    parser.add_option('--ardevice', '-a', default=None,
         help="The camera to use for the ROS AR tracking.")
     options, arguments = parser.parse_args()
     if options.verbose:
