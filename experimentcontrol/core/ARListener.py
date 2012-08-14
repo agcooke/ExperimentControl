@@ -8,7 +8,7 @@ class ARListener(object):
     def __init__(self,outfile,runName,videoDevice):
         self.processString = \
             ['roslaunch',
-            'ar_sofiehdfformat_bridge',
+            'sofiehdfformat_rosdriver',
             'simple_bridge_normal.launch',
             'filename:='+outfile, 
             'runname:='+runName+'/ar/csvimport', 

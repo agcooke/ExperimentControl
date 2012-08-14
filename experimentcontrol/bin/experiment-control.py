@@ -128,5 +128,6 @@ This package is used log data from the sparkfun usb stick
         print "CLOSING AR"
         arListener.close()
     print "\n\n-------------------------------\n:"
-    print "EXITING (YOU CAN NOW MOVE):"+options.runname+' completed.'
+    print "EXITING (YOU CAN NOW MOVE): RUN {0}  in file {1} COMPLETED".format(
+        options.runname,options.outfile)
     print "\n\n-------------------------------\n"
