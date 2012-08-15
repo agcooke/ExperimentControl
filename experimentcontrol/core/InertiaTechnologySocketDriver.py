@@ -3,7 +3,7 @@ import os
 import socket
 from time import sleep
 class InertiaTechnologySocketDriver (object):
-    def __init__(self,host='localhost',port=1234,device='/dev/ttyUSB0',
+    def __init__(self,host='127.0.0.1',port=1234,device='/dev/ttyUSB0',
         mode='+'):
         '''
             Intialise the Driver.
