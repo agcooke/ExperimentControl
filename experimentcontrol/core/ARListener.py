@@ -5,12 +5,16 @@ class ARListener(object):
     """
     Used to start and stop the ant plus listener
     """
-    def __init__(self,outfile,runName,videoDevice):
+    def __init__(self,outfile,runName,videoDevice,lowRes=True):
+        if lowRes == True:
+            launchFile = 'simple_bridge_normal.launch'
+        else:
+            launchFile = 'simple_bridge_1920.launch'
         self.processString = \
             ['roslaunch',
             'sofiehdfformat_rosdriver',
-            'simple_bridge_normal.launch',
-            'filename:='+outfile, 
+            launchFile,
+            'filename:='+outfile,
             'runname:='+runName+'/ar/csvimport', 
             'videodevice:='+videoDevice, 
             ];

@@ -45,6 +45,9 @@ This package is used log data from the sparkfun usb stick
         help="The host for the IMU socket server.")
     parser.add_option('--ardevice', '-a', default=None,
         help="The camera to use for the ROS AR tracking.")
+    parser.add_option('--lowres', '-l', action="store_true", dest="lowres",
+        default=False,help="Defaults to high res.")
+
     options, arguments = parser.parse_args()
     if options.verbose:
         setLogger(logging.DEBUG)
@@ -74,7 +77,7 @@ This package is used log data from the sparkfun usb stick
         print "\n\n-------------------------------\n"
         arListener = ARListener(
             options.outfile,options.runname,
-            options.ardevice)
+            options.ardevice,lowRes=options.lowres)
         arListener.open()
 
     if options.serialant:
