@@ -8,11 +8,12 @@ an ANT+ Bicycle cadence and speed senser, using raw messages
 and event handlers.
 
 """
-from ant.core import event
 import logging
 import optparse
 from time import sleep
-
+import os.path
+from ant.core import event
+from sofiehdfformat.core.SofiePyTableAccess import SofiePyTableAccess
 from experimentcontrol.core.ARListener import ARListener
 from experimentcontrol.core.AntPlusListener import AntPlusListener
 from experimentcontrol.core.InertiaTechnologyListener import IntertiaTechnologyListener
@@ -51,19 +52,39 @@ This package is used log data from the sparkfun usb stick
     options, arguments = parser.parse_args()
     if options.verbose:
         setLogger(logging.DEBUG)
+        print "\n\n-------------------------------\n"
         print "VERBOSE MODE."
+        print "\n\n-------------------------------\n"
         logging.debug('Enabled DEBUG MODE')
         DEBUG=True
     if(options.outfile==None):
+        print "\n\n-------------------------------\n"
         print "Specify the out file (--outfile filename)"
+        print "\n\n-------------------------------\n"
+        exit()
+    if(os.path.isabs(options.outfile)==False):
+        print "\n\n-------------------------------\n"
+        print "The Outfile ({0}) must be specified as an absolute path.".\
+            format(options.outfile)
+        print "\n\n-------------------------------\n"
         exit()
     if(options.runname==None):
+        print "\n\n-------------------------------\n"
         print "Specify the rest run name (--runname 01CornerTestRun) "
+        print "\n\n-------------------------------\n"
+        exit()
+    currentRuns = SofiePyTableAccess.getRunsInTheFile(options.outfile,
+        options.runname)
+    if currentRuns:
+        print "\n\n-------------------------------\n"
+        print "The run '{0}' is already in the file '{1}':\n\nCurrent Runs:\n{2}".\
+            format(options.runname,options.outfile,currentRuns)
+        print "\n\n-------------------------------\n"
         exit()
 
     logging.debug('Creating InertiaTechnoogyListener:')
     if options.serialimu:
-        print "\n\n-------------------------------\n:"
+        print "\n\n-------------------------------\n"
         print "IMU ENABLED"
         print "\n\n-------------------------------\n"
         intertiaTechnologyListener = IntertiaTechnologyListener(
@@ -72,7 +93,7 @@ This package is used log data from the sparkfun usb stick
         intertiaTechnologyListener.open()
         
     if options.ardevice:
-        print "\n\n-------------------------------\n:"
+        print "\n\n-------------------------------\n"
         print "AR ENABLED"
         print "\n\n-------------------------------\n"
         arListener = ARListener(
@@ -81,14 +102,14 @@ This package is used log data from the sparkfun usb stick
         arListener.open()
 
     if options.serialant:
-        print "\n\n-------------------------------\n:"
+        print "\n\n-------------------------------\n"
         print "ANT ENABLED"
         print "\n\n-------------------------------\n"
         antPlusListener = AntPlusListener(options.outfile,
             options.runname,
             options.serialant)
         antPlusListener.open()
-    print "\n\n-------------------------------\n:"
+    print "\n\n-------------------------------\n"
     print "LOGGING SETUP: CALLIBRATION STILL PERIOD STARTS"
     print "\n\n-------------------------------\n"
     i=8;
@@ -96,7 +117,7 @@ This package is used log data from the sparkfun usb stick
         sleep(1)
         i -= 1
         print '.'
-    print "\n\n-------------------------------\n:"
+    print "\n\n-------------------------------\n"
     print "YOU CAN NOW START THE  EXPERIMENT"
     print "\n\n-------------------------------\n"
     try:
@@ -114,11 +135,11 @@ This package is used log data from the sparkfun usb stick
                 antPlusListener.sync()
     except KeyboardInterrupt:
         pass;
-    print "\n\n-------------------------------\n:"
+    print "\n\n-------------------------------\n"
     print "EXPERIMENT STOPPED: STILL PERIOD AT END STARTING"
     print "\n\n-------------------------------\n"
     sleep(5)
-    print "\n\n-------------------------------\n:"
+    print "\n\n-------------------------------\n"
     print "SHUTTING DOWN"
     print "\n\n-------------------------------\n"
     if options.serialant:
@@ -130,7 +151,7 @@ This package is used log data from the sparkfun usb stick
     if options.ardevice:
         print "CLOSING AR"
         arListener.close()
-    print "\n\n-------------------------------\n:"
+    print "\n\n-------------------------------\n"
     print "EXITING (YOU CAN NOW MOVE): RUN {0}  in file {1} COMPLETED".format(
         options.runname,options.outfile)
     print "\n\n-------------------------------\n"
