@@ -14,7 +14,7 @@ from time import sleep
 import os.path
 from ant.core import event
 from sofiehdfformat.core.SofiePyTableAccess import SofiePyTableAccess
-from experimentcontrol.core.ARListener import ARListener
+from experimentcontrol.core.ARListener import ARListener,BIGMARKER,SMALLMARKER
 from experimentcontrol.core.AntPlusListener import AntPlusListener
 from experimentcontrol.core.InertiaTechnologyListener import IntertiaTechnologyListener
 from experimentcontrol.core.antlogging import setLogger
@@ -31,7 +31,8 @@ This package is used log data from the sparkfun usb stick
     """
     parser = optparse.OptionParser(usage=usage)
     parser.add_option('--outfile', '-o', default=None,
-        help="The HDF file where the data will be saved.")
+        help="The HDF file where the data will be saved (You must specify an"+\
+        ' absolute path).')
     parser.add_option('--verbose', '-v', action="store_true", dest="verbose",
         default=False,help="Enable verbose mode.")
     parser.add_option('--runname', '-t', default=None,
@@ -46,9 +47,13 @@ This package is used log data from the sparkfun usb stick
         help="The host for the IMU socket server.")
     parser.add_option('--ardevice', '-a', default=None,
         help="The camera to use for the ROS AR tracking.")
-    parser.add_option('--lowres', '-l', action="store_true", dest="lowres",
-        default=False,help="Defaults to high res.")
-
+    parser.add_option('--highres', '-c', action="store_true", dest="highres",
+        default=False,help="Defaults to low res.")
+    parser.add_option('--bigmarker', '-n', dest="bigmarker",
+        action="store_const",
+        const=BIGMARKER,
+        default=SMALLMARKER,
+        help="Defaults to small marker.")
     options, arguments = parser.parse_args()
     if options.verbose:
         setLogger(logging.DEBUG)
@@ -98,7 +103,8 @@ This package is used log data from the sparkfun usb stick
         print "\n\n-------------------------------\n"
         arListener = ARListener(
             options.outfile,options.runname,
-            options.ardevice,lowRes=options.lowres)
+            options.ardevice,highRes=options.highres,
+            markerSize=options.bigmarker)
         arListener.open()
 
     if options.serialant:

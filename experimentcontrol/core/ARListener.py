@@ -1,12 +1,14 @@
 from subprocess import Popen
 import logging
 import signal
+SMALLMARKER=58.7
+BIGMARKER=97.0
 class ARListener(object):
     """
     Used to start and stop the ant plus listener
     """
-    def __init__(self,outfile,runName,videoDevice,lowRes=True):
-        if lowRes == True:
+    def __init__(self,outfile,runName,videoDevice,highRes=False,markerSize=SMALLMARKER):
+        if highRes == False:
             launchFile = 'simple_bridge_normal.launch'
         else:
             launchFile = 'simple_bridge_1920.launch'
@@ -16,7 +18,8 @@ class ARListener(object):
             launchFile,
             'filename:='+outfile,
             'runname:='+runName+'/ar/csvimport', 
-            'videodevice:='+videoDevice, 
+            'videodevice:='+videoDevice,
+            'markersize:='+str(markerSize),
             ];
         
 
