@@ -17,7 +17,7 @@ class ARListener(object):
             'sofiehdfformat_rosdriver',
             launchFile,
             'filename:='+outfile,
-            'runname:='+runName+'/ar/csvimport', 
+            'runname:='+runName+'/ar',
             'videodevice:='+videoDevice,
             'markersize:='+str(markerSize),
             ];

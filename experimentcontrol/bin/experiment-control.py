@@ -96,7 +96,15 @@ This package is used log data from the sparkfun usb stick
             options.outfile,options.runname,
             options.imuport,options.imuhost,options.serialimu)
         intertiaTechnologyListener.open()
-        
+
+    if options.serialant:
+        print "\n\n-------------------------------\n"
+        print "ANT ENABLED"
+        print "\n\n-------------------------------\n"
+        antPlusListener = AntPlusListener(options.outfile,
+            options.runname,
+            options.serialant)
+        antPlusListener.open()
     if options.ardevice:
         print "\n\n-------------------------------\n"
         print "AR ENABLED"
@@ -107,14 +115,7 @@ This package is used log data from the sparkfun usb stick
             markerSize=options.bigmarker)
         arListener.open()
 
-    if options.serialant:
-        print "\n\n-------------------------------\n"
-        print "ANT ENABLED"
-        print "\n\n-------------------------------\n"
-        antPlusListener = AntPlusListener(options.outfile,
-            options.runname,
-            options.serialant)
-        antPlusListener.open()
+    
     print "\n\n-------------------------------\n"
     print "LOGGING SETUP: CALLIBRATION STILL PERIOD STARTS"
     print "\n\n-------------------------------\n"
