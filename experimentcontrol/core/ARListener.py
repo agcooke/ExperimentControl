@@ -1,6 +1,5 @@
 from subprocess import Popen
 import logging
-import signal
 SMALLMARKER=58.7
 BIGMARKER=97.0
 class ARListener(object):
