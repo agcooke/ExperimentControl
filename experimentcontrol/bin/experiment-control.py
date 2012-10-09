@@ -120,15 +120,20 @@ This package is used log data from the sparkfun usb stick
     print "LOGGING SETUP: CALLIBRATION STILL PERIOD STARTS"
     print "\n\n-------------------------------\n"
     i=8;
-    while i>0:
-        sleep(1)
-        i -= 1
-        print '.'
+    weBeenInterrupted = False
+    try:
+        while i>0:
+            sleep(1)
+            i -= 1
+            print '.'
+    except KeyboardInterrupt:
+        weBeenInterrupted = True; 
     print "\n\n-------------------------------\n"
     print "YOU CAN NOW START THE  EXPERIMENT"
     print "\n\n-------------------------------\n"
+    
     try:
-        while 1:
+        while weBeenInterrupted==False:
 
             command=raw_input('HIT ENTER TO SEND SYNC SIGNALS:')
             logging.debug("raw_input = {0}".format(command));
@@ -145,18 +150,33 @@ This package is used log data from the sparkfun usb stick
     print "\n\n-------------------------------\n"
     print "EXPERIMENT STOPPED: STILL PERIOD AT END STARTING"
     print "\n\n-------------------------------\n"
-    sleep(5)
-    print "\n\n-------------------------------\n"
+    i=5;
+    try:
+        while i>0:
+            sleep(1)
+            i -= 1
+            print '.'
+    except KeyboardInterrupt:
+        print 'END STILL PERIOD INTERRUPTED'
+    print "\n\n-------------------------------------------------------"
+    print "-------------------------------------------------------"
+    print "-------------------------------------------------------"
     print "SHUTTING DOWN"
     print "\n\n-------------------------------\n"
     if options.serialant:
-        print "CLOSING ANT"
+        print "\n\n-------------------------------------------------------"
+        print "-------------------------------------------------------"
+        print "------------------------CLOSING ANT------------------------"
         antPlusListener.close()
     if options.serialimu:
-        print "CLOSING IMU"
+        print "\n\n-------------------------------------------------------"
+        print "-------------------------------------------------------"
+        print "------------------------CLOSING IMU------------------------"
         intertiaTechnologyListener.close()
     if options.ardevice:
-        print "CLOSING AR"
+        print "\n\n-------------------------------------------------------"
+        print "-------------------------------------------------------"
+        print "------------------------CLOSING AR------------------------"
         arListener.close()
     print "\n\n-------------------------------\n"
     print "EXITING (YOU CAN NOW MOVE): RUN {0}  in file {1} COMPLETED".format(

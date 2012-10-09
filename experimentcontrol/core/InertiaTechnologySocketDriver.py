@@ -18,8 +18,8 @@ class InertiaTechnologySocketDriver (object):
         #self.open()
 
     def __del__(self):
-        self.close()
-
+            self.close()
+        
     def open(self):
         logging.debug('Opening socket')
         while self.is_open == False:
@@ -34,9 +34,13 @@ class InertiaTechnologySocketDriver (object):
                 sleep(0.5)
 
     def close(self):
+        
         if self.is_open:
-            self.stopRecording()
-            self.socket.close()
+            try:
+                self.stopRecording()
+                self.socket.close()
+            except socket.error:
+                print 'IMU CLOSED and DELETED'
             self.is_open = False
 
     def _writeCommand(self, command):

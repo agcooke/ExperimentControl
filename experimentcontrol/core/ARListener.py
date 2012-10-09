@@ -1,7 +1,11 @@
 from subprocess import Popen
 import logging
+import roslib; roslib.load_manifest('sofiehdfformat_rosdriver')
+from sofiehdfformat_rosdriver.import_csv_data import importARData
+
 SMALLMARKER=58.7
 BIGMARKER=97.0
+
 class ARListener(object):
     """
     Used to start and stop the ant plus listener
@@ -11,16 +15,17 @@ class ARListener(object):
             launchFile = 'simple_bridge_normal.launch'
         else:
             launchFile = 'simple_bridge_1920.launch'
+        self.filename = outfile
+        self.runName = runName+'/ar'
         self.processString = \
             ['roslaunch',
             'sofiehdfformat_rosdriver',
             launchFile,
-            'filename:='+outfile,
-            'runname:='+runName+'/ar',
+            'filename:='+self.filename,
+            'runname:='+self.runName,
             'videodevice:='+videoDevice,
             'markersize:='+str(markerSize),
             ];
-        
 
     def __del__(self):
         pass
@@ -34,4 +39,6 @@ class ARListener(object):
         pass
 
     def close(self):
+        importARData(self.filename,self.runName)
         self.process.terminate()
+        
