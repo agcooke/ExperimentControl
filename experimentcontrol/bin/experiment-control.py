@@ -73,6 +73,13 @@ This package is used log data from the sparkfun usb stick
             format(options.outfile)
         print "\n\n-------------------------------\n"
         exit()
+    extensionOut = os.path.splitext(options.outfile)
+    if(extensionOut[1]!='.h5'):
+        print "\n\n-------------------------------\n"
+        print "The Outfile ({0}) must be specified have an '.h5' extension.".\
+            format(options.outfile)
+        print "\n\n-------------------------------\n"
+        exit()
     if(options.runname==None):
         print "\n\n-------------------------------\n"
         print "Specify the rest run name (--runname 01CornerTestRun) "
