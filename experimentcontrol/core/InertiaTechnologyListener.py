@@ -15,7 +15,7 @@ from experimentcontrol.core.InertiaTechnologySocketDriver import InertiaTechnolo
 from sofiehdfformat.core.SofieFileUtils import importdata
 NETKEY = '\xB9\xA5\x21\xFB\xBD\x72\xC3\x45'
 TMPLOGFILE=os.path.abspath(os.path.join('.','tmp-output.csv'));
-
+IMURUNEXTENSION='/imu'
 class IntertiaTechnologyListener(object):
     """
     Used to start and stop the ant plus listener
@@ -26,7 +26,7 @@ class IntertiaTechnologyListener(object):
             host=host,port=port,device=serial,
             mode='w')
         self.outfile = outfile;
-        self.runName = runName;
+        self.runName = runName+IMURUNEXTENSION;
     def __del__(self):
         self.driver.close();
         self.process.terminate()

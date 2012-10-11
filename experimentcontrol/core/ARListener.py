@@ -5,6 +5,7 @@ from sofiehdfformat_rosdriver.import_csv_data import importARData
 
 SMALLMARKER=58.7
 BIGMARKER=97.0
+ARRUNEXTENSION='/ar'
 
 class ARListener(object):
     """
@@ -16,7 +17,7 @@ class ARListener(object):
         else:
             launchFile = 'simple_bridge_1920.launch'
         self.filename = outfile
-        self.runName = runName+'/ar'
+        self.runName = runName+ARRUNEXTENSION
         self.processString = \
             ['roslaunch',
             'sofiehdfformat_rosdriver',
