@@ -127,8 +127,8 @@ class AntPlusListener(object):
         msg = SystemResetMessage()
         self.stick.write(msg.encode())
         time.sleep(1)
-        self.evm.stop()
-        self.stick.close()
+        #self.evm.stop()
+        #self.stick.close()
     def sync(self):
         print 'ANT SYNCING'
         self.logger.sync()
