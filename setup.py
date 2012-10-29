@@ -4,6 +4,7 @@ from setuptools import setup, find_packages
 import os
 if os.name == 'nt':
     import py2exe
+    
 setup (
   name = 'ExperimentControl',
   version = '0.1',
@@ -15,6 +16,6 @@ setup (
   url = 'https://github.com/agcooke/ExperimentControl',
   license = open('LICENSE.md').read(),
   long_description=open('README.md').read(),
-  scripts = [os.path.join('experimentcontrol','bin','experimentcontrol.py')],
-  console = [os.path.join('experimentcontrol','bin','experimentcontrol.py')]
+  scripts = [os.path.join('experimentcontrol','bin','experiment-control.py')],
+  console = [os.path.join('experimentcontrol','bin','experiment-control.py')]
 )
