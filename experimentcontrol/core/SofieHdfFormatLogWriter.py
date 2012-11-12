@@ -29,7 +29,6 @@ class LogWriter(object):
     def open(self, filename='',runName='test'):
         if filename == '':
             filename = datetime.datetime.now().isoformat() + '.h5'
-        self.filename = filename
 
         if self.is_open == True:
             self.close()

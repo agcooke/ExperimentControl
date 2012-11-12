@@ -8,12 +8,13 @@ an ANT+ Bicycle cadence and speed senser, using raw messages
 and event handlers.
 
 """
-from ant.core import event
 import logging
 import optparse
 from time import sleep
-
-from experimentcontrol.core.ARListener import ARListener
+import os.path
+from ant.core import event
+from sofiehdfformat.core.SofiePyTableAccess import SofiePyTableAccess
+from experimentcontrol.core.ARListener import ARListener,BIGMARKER,SMALLMARKER
 from experimentcontrol.core.AntPlusListener import AntPlusListener
 from experimentcontrol.core.InertiaTechnologyListener import IntertiaTechnologyListener
 from experimentcontrol.core.antlogging import setLogger
@@ -30,7 +31,8 @@ This package is used log data from the sparkfun usb stick
     """
     parser = optparse.OptionParser(usage=usage)
     parser.add_option('--outfile', '-o', default=None,
-        help="The HDF file where the data will be saved.")
+        help="The HDF file where the data will be saved (You must specify an"+\
+        ' absolute path).')
     parser.add_option('--verbose', '-v', action="store_true", dest="verbose",
         default=False,help="Enable verbose mode.")
     parser.add_option('--runname', '-t', default=None,
@@ -41,63 +43,104 @@ This package is used log data from the sparkfun usb stick
         help="Serial Device of the IMU's.")
     parser.add_option('--imuport', '-p', default=1234,
         help="The Port for the IMU socket server, defaults to 1234.")
-    parser.add_option('--imuhost', '-m', default='localhost',
+    parser.add_option('--imuhost', '-m', default='127.0.0.1',
         help="The host for the IMU socket server.")
-    parser.add_option('--ardevice', '-a', default='/deve/video0',
+    parser.add_option('--ardevice', '-a', default=None,
         help="The camera to use for the ROS AR tracking.")
+    parser.add_option('--highres', '-c', action="store_true", dest="highres",
+        default=False,help="Defaults to low res.")
+    parser.add_option('--bigmarker', '-n', dest="bigmarker",
+        action="store_const",
+        const=BIGMARKER,
+        default=SMALLMARKER,
+        help="Defaults to small marker.")
     options, arguments = parser.parse_args()
     if options.verbose:
         setLogger(logging.DEBUG)
+        print "\n\n-------------------------------\n"
         print "VERBOSE MODE."
+        print "\n\n-------------------------------\n"
         logging.debug('Enabled DEBUG MODE')
         DEBUG=True
     if(options.outfile==None):
+        print "\n\n-------------------------------\n"
         print "Specify the out file (--outfile filename)"
+        print "\n\n-------------------------------\n"
+        exit()
+    if(os.path.isabs(options.outfile)==False):
+        print "\n\n-------------------------------\n"
+        print "The Outfile ({0}) must be specified as an absolute path.".\
+            format(options.outfile)
+        print "\n\n-------------------------------\n"
+        exit()
+    extensionOut = os.path.splitext(options.outfile)
+    if(extensionOut[1]!='.h5'):
+        print "\n\n-------------------------------\n"
+        print "The Outfile ({0}) must be specified have an '.h5' extension.".\
+            format(options.outfile)
+        print "\n\n-------------------------------\n"
         exit()
     if(options.runname==None):
+        print "\n\n-------------------------------\n"
         print "Specify the rest run name (--runname 01CornerTestRun) "
+        print "\n\n-------------------------------\n"
+        exit()
+    currentRuns = SofiePyTableAccess.getRunsInTheFile(options.outfile,
+        options.runname)
+    if currentRuns:
+        print "\n\n-------------------------------\n"
+        print "The run '{0}' is already in the file '{1}':\n\nCurrent Runs:\n{2}".\
+            format(options.runname,options.outfile,currentRuns)
+        print "\n\n-------------------------------\n"
         exit()
 
     logging.debug('Creating InertiaTechnoogyListener:')
     if options.serialimu:
-        print "\n\n-------------------------------\n:"
+        print "\n\n-------------------------------\n"
         print "IMU ENABLED"
         print "\n\n-------------------------------\n"
         intertiaTechnologyListener = IntertiaTechnologyListener(
             options.outfile,options.runname,
             options.imuport,options.imuhost,options.serialimu)
         intertiaTechnologyListener.open()
-        
-    if options.ardevice:
-        print "\n\n-------------------------------\n:"
-        print "AR ENABLED"
-        print "\n\n-------------------------------\n"
-        arListener = ARListener(
-            options.outfile,options.runname,
-            options.ardevice)
-        arListener.open()
 
     if options.serialant:
-        print "\n\n-------------------------------\n:"
+        print "\n\n-------------------------------\n"
         print "ANT ENABLED"
         print "\n\n-------------------------------\n"
         antPlusListener = AntPlusListener(options.outfile,
             options.runname,
             options.serialant)
         antPlusListener.open()
-    print "\n\n-------------------------------\n:"
+    if options.ardevice:
+        print "\n\n-------------------------------\n"
+        print "AR ENABLED"
+        print "\n\n-------------------------------\n"
+        arListener = ARListener(
+            options.outfile,options.runname,
+            options.ardevice,highRes=options.highres,
+            markerSize=options.bigmarker)
+        arListener.open()
+
+    
+    print "\n\n-------------------------------\n"
     print "LOGGING SETUP: CALLIBRATION STILL PERIOD STARTS"
     print "\n\n-------------------------------\n"
     i=8;
-    while i>0:
-        sleep(1)
-        i -= 1
-        print '.'
-    print "\n\n-------------------------------\n:"
+    weBeenInterrupted = False
+    try:
+        while i>0:
+            sleep(1)
+            i -= 1
+            print '.'
+    except KeyboardInterrupt:
+        weBeenInterrupted = True; 
+    print "\n\n-------------------------------\n"
     print "YOU CAN NOW START THE  EXPERIMENT"
     print "\n\n-------------------------------\n"
+    
     try:
-        while 1:
+        while weBeenInterrupted==False:
 
             command=raw_input('HIT ENTER TO SEND SYNC SIGNALS:')
             logging.debug("raw_input = {0}".format(command));
@@ -111,22 +154,38 @@ This package is used log data from the sparkfun usb stick
                 antPlusListener.sync()
     except KeyboardInterrupt:
         pass;
-    print "\n\n-------------------------------\n:"
+    print "\n\n-------------------------------\n"
     print "EXPERIMENT STOPPED: STILL PERIOD AT END STARTING"
     print "\n\n-------------------------------\n"
-    sleep(5)
-    print "\n\n-------------------------------\n:"
+    i=5;
+    try:
+        while i>0:
+            sleep(1)
+            i -= 1
+            print '.'
+    except KeyboardInterrupt:
+        print 'END STILL PERIOD INTERRUPTED'
+    print "\n\n-------------------------------------------------------"
+    print "-------------------------------------------------------"
+    print "-------------------------------------------------------"
     print "SHUTTING DOWN"
     print "\n\n-------------------------------\n"
     if options.serialant:
-        print "CLOSING ANT"
+        print "\n\n-------------------------------------------------------"
+        print "-------------------------------------------------------"
+        print "------------------------CLOSING ANT------------------------"
         antPlusListener.close()
     if options.serialimu:
-        print "CLOSING IMU"
+        print "\n\n-------------------------------------------------------"
+        print "-------------------------------------------------------"
+        print "------------------------CLOSING IMU------------------------"
         intertiaTechnologyListener.close()
     if options.ardevice:
-        print "CLOSING AR"
+        print "\n\n-------------------------------------------------------"
+        print "-------------------------------------------------------"
+        print "------------------------CLOSING AR------------------------"
         arListener.close()
-    print "\n\n-------------------------------\n:"
-    print "EXITING (YOU CAN NOW MOVE):"+options.runname+' completed.'
+    print "\n\n-------------------------------\n"
+    print "EXITING (YOU CAN NOW MOVE): RUN {0}  in file {1} COMPLETED".format(
+        options.runname,options.outfile)
     print "\n\n-------------------------------\n"

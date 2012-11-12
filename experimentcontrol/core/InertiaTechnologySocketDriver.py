@@ -3,7 +3,7 @@ import os
 import socket
 from time import sleep
 class InertiaTechnologySocketDriver (object):
-    def __init__(self,host='localhost',port=1234,device='/dev/ttyUSB0',
+    def __init__(self,host='127.0.0.1',port=1234,device='/dev/ttyUSB0',
         mode='+'):
         '''
             Intialise the Driver.
@@ -18,8 +18,8 @@ class InertiaTechnologySocketDriver (object):
         #self.open()
 
     def __del__(self):
-        self.close()
-
+            self.close()
+        
     def open(self):
         logging.debug('Opening socket')
         while self.is_open == False:
@@ -30,12 +30,17 @@ class InertiaTechnologySocketDriver (object):
                 #    self.close()
                 self.is_open = True
             except socket.error:
-                logging.debug('RETRYING TO OPEN CONNECTION.')        
+                logging.debug('RETRYING TO OPEN CONNECTION.')
+                sleep(0.5)
 
     def close(self):
+        
         if self.is_open:
-            self.stopRecording()
-            self.socket.close()
+            try:
+                self.stopRecording()
+                self.socket.close()
+            except socket.error:
+                print 'IMU CLOSED and DELETED'
             self.is_open = False
 
     def _writeCommand(self, command):
@@ -58,14 +63,11 @@ class InertiaTechnologySocketDriver (object):
         logging.debug(CMD)
         self._writeCommand(CMD)
         sleep(0.5)
+        logging.debug('Setting RTC');
         self.setRtc()
         sleep(0.5)
         logging.debug('Enabling external triggers');
         self.enableExternalRtcTrigger()
-        logging.debug('Setting RTC');
-        
-        
-
 
     def stopRecording(self):
         CMD='close {0}\n'.format(self.device)

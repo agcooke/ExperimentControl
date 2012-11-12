@@ -4,17 +4,18 @@ from setuptools import setup, find_packages
 import os
 if os.name == 'nt':
     import py2exe
+    
 setup (
   name = 'ExperimentControl',
   version = '0.1',
   packages = find_packages(),
-  install_requires=['sofiehdfformat'],
+  install_requires=[],
   author = 'ExperimentControl Team',
   author_email = 'adrian "dot" cooke {at} u t wente <dot> nl',
   description = 'USB Ant plust listener, IMU listerner and experiment run organiser.',
   url = 'https://github.com/agcooke/ExperimentControl',
   license = open('LICENSE.md').read(),
   long_description=open('README.md').read(),
-  scripts = [os.path.join('experimentcontrol','bin','experimentcontrol.py')],
-  console = [os.path.join('experimentcontrol','bin','experimentcontrol.py')]
+  scripts = [os.path.join('experimentcontrol','bin','experiment-control.py')],
+  console = [os.path.join('experimentcontrol','bin','experiment-control.py')]
 )
