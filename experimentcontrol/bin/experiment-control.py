@@ -26,9 +26,12 @@ class MyCallback(event.EventCallback):
         pass
 
 if __name__ == '__main__':
-    usage = """usage: %prog [options] arg1
-This package is used log data from the sparkfun usb stick
-    """
+    usage = """usage: %prog [options]
+This Scripts is used to perform experiments using the SOFIE bicycle stability test bench.
+
+Visit http://mobilitylabtwente.nl/sofie for more information. 
+
+"""
     parser = optparse.OptionParser(usage=usage)
     parser.add_option('--outfile', '-o', default=None,
         help="The HDF file where the data will be saved (You must specify an"+\
