@@ -1,9 +1,8 @@
-============================================================================
+===========================================================================
 
-Introduction to AntPlusListener
+Introduction to Experiment Control:
 ============
-Python package that creates an application that listens and records
-information received from a ANT plus USB stick.
+Python package that is used to manage sensors and experiment process within the (SOFIE project)[http://mobilitylabtwente.nl/sofie]
 
 Contact
 -------
