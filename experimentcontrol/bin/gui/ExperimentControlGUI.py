@@ -2,12 +2,14 @@
 __version__ = "$Revision: 1.10 $"
 __date__ = "$Date: 2004/08/12 19:14:23 $"
 
+PythonCard implementation of a GUI for the ExperimentControl
 """
 
 import os, sys
 import wx
 from wx.html import HtmlEasyPrinting
 from PythonCard import configuration, dialog, model
+from sofiehdfformat.core.SofiePyTableAccess import SofiePyTableAccess
 
 
 def textToHtml(txt):
@@ -18,7 +20,20 @@ def textToHtml(txt):
     return html
 
 
-class MyBackground(model.Background):
+class ExperimentControlBackground(model.Background):
+    filename=None
+    
+    def _updateRunList(self):
+        self.components.runList.clear()           
+        self.components.runList.insertItems(SofiePyTableAccess.getRunsInTheFile(self.filename),0)
+        
+    def _getPathFromDialog(self, 
+               wildCard = "USB Serial device (*ttyUSB*)|*ttyUSB*|Serial device (*tty*)|*tty*|All files (*.*)|*.*"):
+        result = dialog.openFileDialog(wildcard=wildCard)
+        if result.accepted:
+            return result.paths[0]
+        else:
+            return False;
     
     def on_initialize(self, event):
         # if you have any initialization
@@ -77,10 +92,10 @@ class MyBackground(model.Background):
             self.saveFile(self.documentPath)
 
     def on_menuFileSaveAs_select(self, event):
-        wildcard = "Text files (*.txt)|*.TXT;*.txt|All files (*.*)|*.*"
+        wildcard = "HDF 5 File (*.h5)|*.H5;*.h5|All files (*.*)|*.*"
         if self.documentPath is None:
             dir = ''
-            filename = '*.txt'
+            filename = '*.h5'
         else:
             dir = os.path.dirname(self.documentPath)
             filename = os.path.basename(self.documentPath)
@@ -102,21 +117,6 @@ class MyBackground(model.Background):
         self.documentChanged = 0
         self.title = 'Untitled - ' + self.startTitle
         self.statusBar.text = 'Untitled'
-
-    def openFile(self, path):
-        # change the code below for
-        # opening an existing document
-        # the commented lines are from the textEditor tool
-        try:
-            # f = open(path)
-            # self.components.fldDocument.text = f.read().replace('\r\n','\n')
-            # f.close()
-            self.documentPath = path
-            self.documentChanged = 0
-            self.title = os.path.split(path)[-1] + ' - ' + self.startTitle
-            self.statusBar.text = path
-        except:
-            pass
 
     def saveFile(self, path):
         # change the code below for
@@ -182,6 +182,28 @@ class MyBackground(model.Background):
             # binary. Not sure what happens with CR/LF versus CR versus LF
             # line endings either
             self.openFile(path)
+            
+    def on_filename_mouseDoubleClick(self, event):
+        self.filename = self._getPathFromDialog(wildCard = "HDF 5 File (*.h5)|*.H5;*.h5|All files (*.*)|*.*")
+        self.components.filename.writeText(self.filename)
+        self.title = os.path.split(self.filename)[-1] + ' - ' + self.startTitle
+        self.statusBar.text = self.filename
+        self._updateRunList()  
+
+    def on_runName_loseFocus(self, event):
+        self.runName = self.components.runName.getLineText(0)
+        if self.filename:
+            if self.runName in SofiePyTableAccess.getRunsInTheFile(self.filename):
+                dialog.alertDialog(self,'The Run Name already exists.','Check you run name')
+        
+    def on_imuDevice_mouseDoubleClick(self, event):
+        self.imuDevice = self._getPathFromDialog()
+        self.components.imuDevice.writeText(self.imuDevice)
+        
+    def on_arDevice_mouseDoubleClick(self, event):
+        self.arDevice = self._getPathFromDialog(
+                wildCard = "Serial device (*video*)|*video*|All files (*.*)|*.*")
+        self.components.arDevice.writeText(self.arDevice)
 
         
     def on_menuFilePrint_select(self, event):
@@ -258,5 +280,5 @@ class MyBackground(model.Background):
         pass
 
 if __name__ == '__main__':
-    app = model.Application(MyBackground)
+    app = model.Application(ExperimentControlBackground)
     app.MainLoop()
