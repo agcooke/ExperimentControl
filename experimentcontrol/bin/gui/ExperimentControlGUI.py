@@ -22,6 +22,10 @@ def textToHtml(txt):
 
 class ExperimentControlBackground(model.Background):
     filename=None
+    arDevice=None
+    imuDevice=None
+    imuhost = '127.0.0.1'
+    imuPort = 1234
     
     def _updateRunList(self):
         self.components.runList.clear()           
@@ -33,33 +37,30 @@ class ExperimentControlBackground(model.Background):
         if result.accepted:
             return result.paths[0]
         else:
-            return False;
-    
+            return '';
+    def _testSerialDevice(self,device,errorString):
+        try:
+            
+            if not os.path.exists(device):
+                dialog.alertDialog(self,'The '+errorString+' is not a serial device','Device Problem')
+                return False
+        except:
+            dialog.alertDialog(self,'The '+errorString+' cannot be opened.'+\
+                               str(device),'Device Problem')
+            return False
+        return True
+            
     def on_initialize(self, event):
         # if you have any initialization
         # including sizer setup, do it here
-
-        self.printer = HtmlEasyPrinting()
         # self.loadConfig()
         self.startTitle = self.title
-        self.newFile()
 
     def loadConfig(self):
         pass
 
     def saveConfig(self):
         pass
-
-    def saveChanges(self):
-        # save configuration info in the app directory
-        #filename = os.path.basename(self.documentPath)
-        if self.documentPath is None:
-            filename = "Untitled"
-        else:
-            filename = self.documentPath
-        msg = "The text in the %s file has changed.\n\nDo you want to save the changes?" % filename
-        result = dialog.messageDialog(self, msg, 'textEditor', wx.ICON_EXCLAMATION | wx.YES_NO | wx.CANCEL)
-        return result.returnedString
 
     def doExit(self):
         if self.documentChanged:
@@ -84,117 +85,25 @@ class ExperimentControlBackground(model.Background):
             self.printer = None
             event.skip()
 
-    def on_menuFileSave_select(self, event):
-        if self.documentPath is None:
-            # this a "new" document and needs to go through Save As...
-            self.on_menuFileSaveAs_select(None)
-        else:
-            self.saveFile(self.documentPath)
-
-    def on_menuFileSaveAs_select(self, event):
-        wildcard = "HDF 5 File (*.h5)|*.H5;*.h5|All files (*.*)|*.*"
-        if self.documentPath is None:
-            dir = ''
-            filename = '*.h5'
-        else:
-            dir = os.path.dirname(self.documentPath)
-            filename = os.path.basename(self.documentPath)
-        result = dialog.saveFileDialog(None, "Save As", dir, filename, wildcard)
-        if result.accepted:
-            path = result.paths[0]
-            self.saveFile(path)
-            return True
-        else:
-            return False
-
-    def newFile(self):
-        # change the code below for
-        # creating a new document
-        # the commented line is from the textEditor tool
-
-        # self.components.fldDocument.text = ''
-        self.documentPath = None
-        self.documentChanged = 0
-        self.title = 'Untitled - ' + self.startTitle
-        self.statusBar.text = 'Untitled'
-
-    def saveFile(self, path):
-        # change the code below for
-        # saving an existing document
-        # the commented lines are from the textEditor tool
-        try:
-            # f = open(path, 'w')
-            # f.write(self.components.fldDocument.text)
-            # f.close()
-            self.documentPath = path
-            self.documentChanged = False
-            self.title = os.path.split(path)[-1] + ' - ' + self.startTitle
-            self.statusBar.text = path
-        except:
-            pass
-
-    def on_menuFileNew_select(self, event):
-        if self.documentChanged:
-            save = self.saveChanges()
-            if save == "Cancel":
-                # don't do anything, just go back to editing
-                pass
-            elif save == "No":
-                # any changes will be lost
-                self.newFile()
-            else:
-                if self.documentPath is None:
-                    if self.on_menuFileSaveAs_select(None):
-                        self.newFile()
-                else:
-                    self.saveFile(self.documentPath)
-                    self.newFile()
-        else:
-            # don't need to save
-            self.newFile()
-
-    def on_menuFileOpen_select(self, event):
-        # should probably have an alert dialog here
-        # warning about saving the current file before opening another one
-        if self.documentChanged:
-            save = self.saveChanges()
-            if save == "Cancel":
-                # don't do anything, just go back to editing
-                return
-            elif save == "No":
-                # any changes will be lost
-                pass
-            else:
-                if self.documentPath is None:
-                    # if the user cancels out of the Save As then go back to editing
-                    if not self.on_menuFileSaveAs_select(None):
-                        return
-                else:
-                    self.saveFile(self.documentPath)
-        
-        # split this method into several pieces to make it more flexible
-        wildcard = "HDF 5 Files (*.h5)|*.h5;*.H5|All files (*.*)|*.*"
-        result = dialog.openFileDialog(wildcard=wildcard)
-        if result.accepted:
-            path = result.paths[0]
-            # an error will probably occur here if the text is too large
-            # to fit in the wxTextCtrl (TextArea) or the file is actually
-            # binary. Not sure what happens with CR/LF versus CR versus LF
-            # line endings either
-            self.openFile(path)
-            
     def on_filename_mouseDoubleClick(self, event):
         self.filename = self._getPathFromDialog(wildCard = "HDF 5 File (*.h5)|*.H5;*.h5|All files (*.*)|*.*")
         self.components.filename.writeText(self.filename)
         self.title = os.path.split(self.filename)[-1] + ' - ' + self.startTitle
         self.statusBar.text = self.filename
         self._updateRunList()  
+        
+    def on_runList_mouseUp(self, event):
+        self.runName = self.components.runList.stringSelection
+        self.components.runName.clear()
+        self.components.runName.writeText(self.runName)
 
-    def on_runName_loseFocus(self, event):
+    def on_runName_loseFocus(self, event=None):
         self.runName = self.components.runName.getLineText(0)
         if self.filename:
             if self.runName in SofiePyTableAccess.getRunsInTheFile(self.filename):
                 dialog.alertDialog(self,'The Run Name already exists.','Check you run name')
+                return False
+        return True
         
     def on_imuDevice_mouseDoubleClick(self, event):
         self.imuDevice = self._getPathFromDialog()
@@ -204,7 +113,23 @@ class ExperimentControlBackground(model.Background):
         self.arDevice = self._getPathFromDialog(
                 wildCard = "Serial device (*video*)|*video*|All files (*.*)|*.*")
         self.components.arDevice.writeText(self.arDevice)
-
+    
+    def on_startStopButton_mouseClick(self,event):  
+        if not self.on_runName_loseFocus():
+            return False
+        if not self._testSerialDevice(self.arDevice,' AR DEVICE'):
+            return False
+        if not self._testSerialDevice(self.imuDevice,' IMU DEVICE'):
+            return False
+        
+        if self.components.startStopButton.checked:
+            #------- dialog.alertDialog(self,'Startng RUN','Check you run name')
+            self.components.startStopButton.label = 'Stop'
+            self.components.startStopButton.backgroundColor = (255, 0, 0, 255)
+        else:
+            #------ dialog.alertDialog(self,'Stopping RUN','Check you run name')
+            self.components.startStopButton.label = 'Start'
+            self.components.startStopButton.backgroundColor = (0, 255, 0, 255)
         
     def on_menuFilePrint_select(self, event):
         # put your code here for print

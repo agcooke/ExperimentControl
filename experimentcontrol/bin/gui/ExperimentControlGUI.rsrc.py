@@ -145,6 +145,7 @@
     'name':'arDevice', 
     'position':(170, 111), 
     'size':(151, -1), 
+    'editable':False, 
     'toolTip':u'AR Device - One of the /dev/video devices.', 
     },
 
@@ -167,6 +168,7 @@
     'name':'imuDevice', 
     'position':(170, 80), 
     'size':(151, -1), 
+    'editable':False, 
     'toolTip':u'Click to choose the device.', 
     },
 
