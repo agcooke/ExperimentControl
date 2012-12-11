@@ -26,6 +26,7 @@ class ExperimentControlBackground(model.Background):
     imuDevice=None
     imuhost = '127.0.0.1'
     imuPort = 1234
+    running = False
     
     def _updateRunList(self):
         self.components.runList.clear()           
@@ -39,15 +40,16 @@ class ExperimentControlBackground(model.Background):
         else:
             return '';
     def _testSerialDevice(self,device,errorString):
-        try:
-            
-            if not os.path.exists(device):
-                dialog.alertDialog(self,'The '+errorString+' is not a serial device','Device Problem')
+        if device:
+            try:
+                
+                if not os.path.exists(device):
+                    dialog.alertDialog(self,'The '+errorString+' is not a serial device','Device Problem')
+                    return False
+            except:
+                dialog.alertDialog(self,'The '+errorString+' cannot be opened.'+\
+                                   str(device),'Device Problem')
                 return False
-        except:
-            dialog.alertDialog(self,'The '+errorString+' cannot be opened.'+\
-                               str(device),'Device Problem')
-            return False
         return True
             
     def on_initialize(self, event):
@@ -63,20 +65,7 @@ class ExperimentControlBackground(model.Background):
         pass
 
     def doExit(self):
-        if self.documentChanged:
-            save = self.saveChanges()
-            if save == "Cancel":
-                return False
-            elif save == "No":
-                return True
-            else:
-                if self.documentPath is None:
-                    return self.on_menuFileSaveAs_select(None)
-                else:
-                    self.saveFile(self.documentPath)
-                    return True
-        else:
-            return 1
+        return 1
 
     def on_close(self, event):
         if self.doExit():
@@ -126,10 +115,12 @@ class ExperimentControlBackground(model.Background):
             #------- dialog.alertDialog(self,'Startng RUN','Check you run name')
             self.components.startStopButton.label = 'Stop'
             self.components.startStopButton.backgroundColor = (255, 0, 0, 255)
+            self.running = True;
         else:
             #------ dialog.alertDialog(self,'Stopping RUN','Check you run name')
             self.components.startStopButton.label = 'Start'
             self.components.startStopButton.backgroundColor = (0, 255, 0, 255)
+            self.running = False;
         
     def on_menuFilePrint_select(self, event):
         # put your code here for print
@@ -207,3 +198,4 @@ class ExperimentControlBackground(model.Background):
 if __name__ == '__main__':
     app = model.Application(ExperimentControlBackground)
     app.MainLoop()
+    
