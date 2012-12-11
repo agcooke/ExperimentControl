@@ -198,4 +198,3 @@ class ExperimentControlBackground(model.Background):
 if __name__ == '__main__':
     app = model.Application(ExperimentControlBackground)
     app.MainLoop()
-    
