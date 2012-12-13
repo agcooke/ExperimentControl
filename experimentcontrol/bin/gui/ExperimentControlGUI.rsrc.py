@@ -82,6 +82,16 @@
      },
          'components': [
 
+{'type':'TextField', 
+    'name':'globalExperimentFeedback', 
+    'position':(305, 413), 
+    'size':(341, 41), 
+    'backgroundColor':(0, 0, 0, 255), 
+    'font':{'style': 'bold', 'faceName': u'Ubuntu', 'size': 14}, 
+    'foregroundColor':(0, 255, 0, 255), 
+    'text':u'Inactive', 
+    },
+
 {'type':'ToggleButton', 
     'name':'startStopButton', 
     'position':(450, 230), 
@@ -110,6 +120,7 @@
     'name':'runName', 
     'position':(105, 179), 
     'size':(542, -1), 
+    'toolTip':u'The runName must be unique when starting a new run.', 
     },
 
 {'type':'StaticBox', 
@@ -124,6 +135,7 @@
     'name':'filename', 
     'position':(37, 24), 
     'size':(286, -1), 
+    'toolTip':u'Double Click to open a file.', 
     },
 
 {'type':'StaticBox', 
@@ -184,8 +196,9 @@
     'name':'runList', 
     'position':(342, 45), 
     'size':(306, 83), 
+    'backgroundColor':(242, 241, 240, 255), 
     'items':[], 
-    'toolTip':u'Cannot interact with runs, its just to show you what has been done so far.', 
+    'toolTip':u'Click on a run to view meta information about the run.', 
     },
 
 ] # end components

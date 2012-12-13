@@ -10,7 +10,15 @@ import wx
 from wx.html import HtmlEasyPrinting
 from PythonCard import configuration, dialog, model
 from sofiehdfformat.core.SofiePyTableAccess import SofiePyTableAccess
+import time
+import thread
 
+STARTBUTTON_BACKGROUNDCOLOR_START=(0, 255, 0, 255)
+STARTBUTTON_BACKGROUNDCOLOR_STOP=(255,0, 0, 255)
+EXPERIMENTSTATUS_INACTIVE='INACTIVE'
+EXPERIMENTSTATUS_SETTINGUP='SETTING UP'
+EXPERIMENTSTATUS_RUNNING='DO THE EXPERIMENT NOW'
+EXPERIMENTSTATUS_TEARINGDOWN='EXPERIMENT BUSY SHUTTING DOWN'
 
 def textToHtml(txt):
     # the wxHTML classes don't require valid HTML
@@ -26,6 +34,7 @@ class ExperimentControlBackground(model.Background):
     imuDevice=None
     imuhost = '127.0.0.1'
     imuPort = 1234
+    runName=None
     running = False
     
     def _updateRunList(self):
@@ -51,6 +60,10 @@ class ExperimentControlBackground(model.Background):
                                    str(device),'Device Problem')
                 return False
         return True
+    
+    def _updateGlobalExperimentFeedback(self,status):
+        self.components.globalExperimentFeedback.clear()
+        self.components.globalExperimentFeedback.writeText(status)
             
     def on_initialize(self, event):
         # if you have any initialization
@@ -88,21 +101,21 @@ class ExperimentControlBackground(model.Background):
 
     def on_runName_loseFocus(self, event=None):
         self.runName = self.components.runName.getLineText(0)
+        if not self.runName:
+            dialog.alertDialog(self,'The Run Name is not set.','Check you run name')
+            return False
         if self.filename:
             if self.runName in SofiePyTableAccess.getRunsInTheFile(self.filename):
                 dialog.alertDialog(self,'The Run Name already exists.','Check you run name')
                 return False
         return True
-        
     def on_imuDevice_mouseDoubleClick(self, event):
         self.imuDevice = self._getPathFromDialog()
         self.components.imuDevice.writeText(self.imuDevice)
-        
     def on_arDevice_mouseDoubleClick(self, event):
         self.arDevice = self._getPathFromDialog(
                 wildCard = "Serial device (*video*)|*video*|All files (*.*)|*.*")
         self.components.arDevice.writeText(self.arDevice)
-    
     def on_startStopButton_mouseClick(self,event):  
         if not self.on_runName_loseFocus():
             return False
@@ -110,18 +123,16 @@ class ExperimentControlBackground(model.Background):
             return False
         if not self._testSerialDevice(self.imuDevice,' IMU DEVICE'):
             return False
-        
         if self.components.startStopButton.checked:
             #------- dialog.alertDialog(self,'Startng RUN','Check you run name')
             self.components.startStopButton.label = 'Stop'
-            self.components.startStopButton.backgroundColor = (255, 0, 0, 255)
+            self.components.startStopButton.backgroundColor = STARTBUTTON_BACKGROUNDCOLOR_STOP
             self.running = True;
         else:
             #------ dialog.alertDialog(self,'Stopping RUN','Check you run name')
             self.components.startStopButton.label = 'Start'
-            self.components.startStopButton.backgroundColor = (0, 255, 0, 255)
+            self.components.startStopButton.backgroundColor = STARTBUTTON_BACKGROUNDCOLOR_START
             self.running = False;
-        
     def on_menuFilePrint_select(self, event):
         # put your code here for print
         # the commented code below is from the textEditor tool
@@ -130,7 +141,6 @@ class ExperimentControlBackground(model.Background):
         #source = textToHtml(self.components.fldDocument.text)
         #self.printer.PrintText(source)
         pass
-
     def on_menuFilePrintPreview_select(self, event):
         # put your code here for print preview
         # the commented code below is from the textEditor tool
@@ -139,37 +149,29 @@ class ExperimentControlBackground(model.Background):
         #source = textToHtml(self.components.fldDocument.text)
         #self.printer.PreviewText(source)
         pass
-
     def on_menuFilePageSetup_select(self, event):
         self.printer.PageSetup()
-
-
     # the following was copied and pasted from the searchexplorer sample
     def on_menuEditUndo_select(self, event):
         widget = self.findFocus()
         if hasattr(widget, 'editable') and widget.canUndo():
             widget.undo()
-
     def on_menuEditRedo_select(self, event):
         widget = self.findFocus()
         if hasattr(widget, 'editable') and widget.canRedo():
             widget.redo()
-
     def on_menuEditCut_select(self, event):
         widget = self.findFocus()
         if hasattr(widget, 'editable') and widget.canCut():
             widget.cut()
-
     def on_menuEditCopy_select(self, event):
         widget = self.findFocus()
         if hasattr(widget, 'editable') and widget.canCopy():
             widget.copy()
-
     def on_menuEditPaste_select(self, event):
         widget = self.findFocus()
         if hasattr(widget, 'editable') and widget.canPaste():
             widget.paste()
-        
     def on_menuEditClear_select(self, event):
         widget = self.findFocus()
         if hasattr(widget, 'editable'):
@@ -184,17 +186,60 @@ class ExperimentControlBackground(model.Background):
                     widget.replace(ins, ins + 1, '')
                 except:
                     pass
-
     def on_menuEditSelectAll_select(self, event):
         widget = self.findFocus()
         if hasattr(widget, 'editable'):
             widget.setSelection(0, widget.getLastPosition())
-        
-
     def on_doHelpAbout_command(self, event):
         # put your About box here
         pass
+    
+    def updateGlobalExperimentFeedBackSettingUp(self):
+        self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_SETTINGUP)
+    def updateGlobalExperimentFeedBackRunning(self):
+        self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_RUNNING)
+    def updateGlobalExperimentFeedBackTearingDown(self):
+        self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_TEARINGDOWN)
+    def updateGlobalExperimentFeedBackInactive(self):
+        self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_INACTIVE)
 
+def ExecutionThread(*argtuple):
+        """
+        The Experiment Control Thread.
+        """
+        print "ExecutionThread: entered"
+        experimentControlBackground = argtuple[0]
+        print "ExecutionThread: starting loop"
+        while True:
+            #Waiting to run
+            print 'Waiting to run.'
+            while experimentControlBackground.running == False:
+                time.sleep(0.5)
+            #In A Run Cycle
+            #Setting up
+            print 'Settting Up'
+            experimentControlBackground.updateGlobalExperimentFeedBackSettingUp()
+            i=8;
+            while i>0:
+                time.sleep(1)
+                i -= 1
+                print '.'
+            print 'Running'
+            experimentControlBackground.updateGlobalExperimentFeedBackRunning()
+            while experimentControlBackground.running == True:
+                time.sleep(0.25)
+            #Tearing Down
+            print 'Tear down'
+            experimentControlBackground.updateGlobalExperimentFeedBackTearingDown()
+            i=8;
+            while i>0:
+                time.sleep(1)
+                i -= 1
+                print '.'
+            print 'Stopped'
+            experimentControlBackground.updateGlobalExperimentFeedBackInactive()
+            
 if __name__ == '__main__':
     app = model.Application(ExperimentControlBackground)
+    thread.start_new_thread(ExecutionThread, (app.getCurrentBackground(),))
     app.MainLoop()
