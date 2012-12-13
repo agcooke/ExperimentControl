@@ -18,6 +18,7 @@ from experimentcontrol.core.ARListener import ARListener,BIGMARKER,SMALLMARKER
 from experimentcontrol.core.AntPlusListener import AntPlusListener
 from experimentcontrol.core.InertiaTechnologyListener import IntertiaTechnologyListener
 from experimentcontrol.core.antlogging import setLogger
+from experimentcontrol.core.control import startExperiment
 NETKEY = '\xB9\xA5\x21\xFB\xBD\x72\xC3\x45'
 
 # Event callback
@@ -93,36 +94,12 @@ This package is used log data from the sparkfun usb stick
             format(options.runname,options.outfile,currentRuns)
         print "\n\n-------------------------------\n"
         exit()
-
-    logging.debug('Creating InertiaTechnoogyListener:')
-    if options.serialimu:
-        print "\n\n-------------------------------\n"
-        print "IMU ENABLED"
-        print "\n\n-------------------------------\n"
-        intertiaTechnologyListener = IntertiaTechnologyListener(
-            options.outfile,options.runname,
-            options.imuport,options.imuhost,options.serialimu)
-        intertiaTechnologyListener.open()
-
-    if options.serialant:
-        print "\n\n-------------------------------\n"
-        print "ANT ENABLED"
-        print "\n\n-------------------------------\n"
-        antPlusListener = AntPlusListener(options.outfile,
-            options.runname,
-            options.serialant)
-        antPlusListener.open()
-    if options.ardevice:
-        print "\n\n-------------------------------\n"
-        print "AR ENABLED"
-        print "\n\n-------------------------------\n"
-        arListener = ARListener(
-            options.outfile,options.runname,
-            options.ardevice,highRes=options.highres,
-            markerSize=options.bigmarker)
-        arListener.open()
-
     
+    startExperiment(options.outfile, options.runname,
+                    options.serialimu,options.serialant,options.serialar,
+                    imuPort=options.imuport,imuHost=options.imuhost,
+                    arHighRes=options.highres,arBigMarker=options.bigmarker)
+   
     print "\n\n-------------------------------\n"
     print "LOGGING SETUP: CALLIBRATION STILL PERIOD STARTS"
     print "\n\n-------------------------------\n"

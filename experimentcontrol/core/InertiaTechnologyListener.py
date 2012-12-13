@@ -16,11 +16,13 @@ from sofiehdfformat.core.SofieFileUtils import importdata
 NETKEY = '\xB9\xA5\x21\xFB\xBD\x72\xC3\x45'
 TMPLOGFILE=os.path.abspath(os.path.join('.','tmp-output.csv'));
 IMURUNEXTENSION='/imu'
+IMUPORT=1234
+IMUHOST='127.0.0.1'
 class IntertiaTechnologyListener(object):
     """
     Used to start and stop the ant plus listener
     """
-    def __init__(self,outfile,runName,port,host,serial):
+    def __init__(self,outfile,runName,serial,port=IMUPORT,host=IMUHOST):
         self.processString = ['/usr/bin/ProMoveGUI','-p 1234'];
         self.driver = InertiaTechnologySocketDriver(
             host=host,port=port,device=serial,
