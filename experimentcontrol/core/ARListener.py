@@ -1,12 +1,14 @@
 from subprocess import Popen
 import logging
+import time
 import roslib; roslib.load_manifest('sofiehdfformat_rosdriver')
-from sofiehdfformat_rosdriver.import_csv_data import importARData
-
+from sofiehdfformat_rosdriver.import_csv_data import importARData,importBagData
+import os, tempfile
 SMALLMARKER=58.7
 BIGMARKER=97.0
 ARRUNEXTENSION='/ar'
-
+USBCAMERATOPIC='/usb_cam/image_raw'
+USBCAMTMPFILE='usbcam.bag'
 class ARListener(object):
     """
     Used to start and stop the ant plus listener
@@ -17,6 +19,10 @@ class ARListener(object):
         else:
             launchFile = 'simple_bridge_1920.launch'
         self.filename = outfile
+        
+        self.tmpdir = tempfile.mkdtemp()
+        self.usbCamBagFilename = os.path.join(self.tmpdir, USBCAMTMPFILE)
+        
         self.runName = runName+ARRUNEXTENSION
         self.processString = \
             ['roslaunch',
@@ -26,7 +32,10 @@ class ARListener(object):
             'runname:='+self.runName,
             'videodevice:='+videoDevice,
             'markersize:='+str(markerSize),
+            'usbcamrosbag:='+self.usbCamBagFilename,
+            'usbcamtopic:='+USBCAMERATOPIC,
             ];
+        logging.debug('The Processing String for AR Listener: '+str(self.processString))
 
     def __del__(self):
         pass
@@ -40,6 +49,12 @@ class ARListener(object):
         pass
 
     def close(self):
-        importARData(self.filename,self.runName)
         self.process.terminate()
+        time.sleep(1)
+        importARData(self.filename,self.runName)
+        importBagData(self.filename,self.usbCamBagFilename,self.runName)
+        if os.path.isfile(self.usbCamBagFilename):
+            os.remove(self.usbCamBagFilename)
+        if os.path.isdir(self.tmpdir):
+            os.rmdir(self.tmpdir)
         
