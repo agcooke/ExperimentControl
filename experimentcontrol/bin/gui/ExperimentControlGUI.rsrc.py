@@ -154,7 +154,7 @@
     },
 
 {'type':'TextField', 
-    'name':'arDevice', 
+    'name':'serialAr', 
     'position':(170, 111), 
     'size':(151, -1), 
     'editable':False, 
@@ -177,7 +177,7 @@
     },
 
 {'type':'TextField', 
-    'name':'imuDevice', 
+    'name':'serialImu', 
     'position':(170, 80), 
     'size':(151, -1), 
     'editable':False, 

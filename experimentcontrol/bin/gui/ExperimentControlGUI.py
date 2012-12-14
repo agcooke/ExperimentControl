@@ -10,11 +10,18 @@ import wx
 from wx.html import HtmlEasyPrinting
 from PythonCard import configuration, dialog, model
 from sofiehdfformat.core.SofiePyTableAccess import SofiePyTableAccess
+from experimentcontrol.core.control import startExperiment, syncListeners,shutDownExperiment,isCorrectFilename
+from experimentcontrol.core.Exceptions import OutFileMustBeAbsolutePath, OutFileMustBeh5Extention
+
 import time
 import thread
 
 STARTBUTTON_BACKGROUNDCOLOR_START=(0, 255, 0, 255)
 STARTBUTTON_BACKGROUNDCOLOR_STOP=(255,0, 0, 255)
+STARTBUTTON_START='Start'
+STARTBUTTON_WAIT='Wait'
+STARTBUTTON_STOP='Stop'
+
 EXPERIMENTSTATUS_INACTIVE='INACTIVE'
 EXPERIMENTSTATUS_SETTINGUP='SETTING UP'
 EXPERIMENTSTATUS_RUNNING='DO THE EXPERIMENT NOW'
@@ -30,9 +37,10 @@ def textToHtml(txt):
 
 class ExperimentControlBackground(model.Background):
     filename=None
-    arDevice=None
-    imuDevice=None
-    imuhost = '127.0.0.1'
+    serialAr=None
+    serialImu=None
+    serialAnt=None
+    imuHost = '127.0.0.1'
     imuPort = 1234
     runName=None
     running = False
@@ -89,11 +97,26 @@ class ExperimentControlBackground(model.Background):
 
     def on_filename_mouseDoubleClick(self, event):
         self.filename = self._getPathFromDialog(wildCard = "HDF 5 File (*.h5)|*.H5;*.h5|All files (*.*)|*.*")
+        if not self.filename:
+            return;
+        self.components.filename.clear()
         self.components.filename.writeText(self.filename)
+        self.on_filename_closeField()
+    def on_filename_closeField(self, event=None):
+        self.filename = self.components.filename.getLineText(0)
+        try:
+            isCorrectFilename(self.filename);
+        except OutFileMustBeh5Extention:
+            dialog.alertDialog(self,"The filename ({0}) must be specified with an '.h5' extension.".\
+                format(self.filename),'Check you filename')
+            return
+        except OutFileMustBeAbsolutePath:
+            dialog.alertDialog(self,"The filename ({0}) must be an absolute path.".\
+                format(self.filename),'Check you filename')
+            return
         self.title = os.path.split(self.filename)[-1] + ' - ' + self.startTitle
         self.statusBar.text = self.filename
         self._updateRunList()  
-        
     def on_runList_mouseUp(self, event):
         self.runName = self.components.runList.stringSelection
         self.components.runName.clear()
@@ -109,30 +132,36 @@ class ExperimentControlBackground(model.Background):
                 dialog.alertDialog(self,'The Run Name already exists.','Check you run name')
                 return False
         return True
-    def on_imuDevice_mouseDoubleClick(self, event):
-        self.imuDevice = self._getPathFromDialog()
-        self.components.imuDevice.writeText(self.imuDevice)
-    def on_arDevice_mouseDoubleClick(self, event):
-        self.arDevice = self._getPathFromDialog(
+    def on_serialImu_mouseDoubleClick(self, event):
+        self.serialImu = self._getPathFromDialog()
+        self.components.serialImu.writeText(self.serialImu)
+    def on_serialAr_mouseDoubleClick(self, event):
+        self.serialAr = self._getPathFromDialog(
                 wildCard = "Serial device (*video*)|*video*|All files (*.*)|*.*")
-        self.components.arDevice.writeText(self.arDevice)
+        self.components.serialAr.writeText(self.serialAr)
     def on_startStopButton_mouseClick(self,event):  
         if not self.on_runName_loseFocus():
             return False
-        if not self._testSerialDevice(self.arDevice,' AR DEVICE'):
+        try:
+            isCorrectFilename(self.filename);
+        except:
+            dialog.alertDialog(self,"The filename is not correct".\
+                format(self.filename),'Check you filename')
+            return
+        if not self._testSerialDevice(self.serialAr,' AR DEVICE'):
             return False
-        if not self._testSerialDevice(self.imuDevice,' IMU DEVICE'):
+        if not self._testSerialDevice(self.serialImu,' IMU DEVICE'):
             return False
         if self.components.startStopButton.checked:
             #------- dialog.alertDialog(self,'Startng RUN','Check you run name')
-            self.components.startStopButton.label = 'Stop'
+            self.components.startStopButton.label = STARTBUTTON_STOP
             self.components.startStopButton.backgroundColor = STARTBUTTON_BACKGROUNDCOLOR_STOP
             self.running = True;
-        else:
+        elif self.running:
             #------ dialog.alertDialog(self,'Stopping RUN','Check you run name')
-            self.components.startStopButton.label = 'Start'
-            self.components.startStopButton.backgroundColor = STARTBUTTON_BACKGROUNDCOLOR_START
             self.running = False;
+            self.components.startStopButton.label = STARTBUTTON_WAIT
+            self.components.startStopButton.enabled = False;
     def on_menuFilePrint_select(self, event):
         # put your code here for print
         # the commented code below is from the textEditor tool
@@ -202,6 +231,11 @@ class ExperimentControlBackground(model.Background):
         self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_TEARINGDOWN)
     def updateGlobalExperimentFeedBackInactive(self):
         self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_INACTIVE)
+    def updateStartButtonStart(self):
+        self.components.startStopButton.label = STARTBUTTON_START
+        self.components.startStopButton.backgroundColor = STARTBUTTON_BACKGROUNDCOLOR_START
+        self.components.startStopButton.enabled = True;
+        self._updateRunList()
 
 def ExecutionThread(*argtuple):
         """
@@ -219,6 +253,14 @@ def ExecutionThread(*argtuple):
             #Setting up
             print 'Settting Up'
             experimentControlBackground.updateGlobalExperimentFeedBackSettingUp()
+            listeners = \
+            startExperiment(experimentControlBackground.filename, 
+                            experimentControlBackground.runName,
+                    experimentControlBackground.serialImu,
+                    experimentControlBackground.serialAnt,
+                    experimentControlBackground.serialAr,
+                    imuPort=experimentControlBackground.imuPort,
+                    imuHost=experimentControlBackground.imuHost)
             i=8;
             while i>0:
                 time.sleep(1)
@@ -227,6 +269,7 @@ def ExecutionThread(*argtuple):
             print 'Running'
             experimentControlBackground.updateGlobalExperimentFeedBackRunning()
             while experimentControlBackground.running == True:
+                syncListeners(listeners)
                 time.sleep(0.25)
             #Tearing Down
             print 'Tear down'
@@ -237,7 +280,11 @@ def ExecutionThread(*argtuple):
                 i -= 1
                 print '.'
             print 'Stopped'
+            shutDownExperiment(listeners)
+            experimentControlBackground.updateStartButtonStart()
             experimentControlBackground.updateGlobalExperimentFeedBackInactive()
+            #Clean Up
+            listeners = []
             
 if __name__ == '__main__':
     app = model.Application(ExperimentControlBackground)
