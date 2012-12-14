@@ -1,11 +1,12 @@
 from subprocess import Popen
 import logging
 import roslib; roslib.load_manifest('sofiehdfformat_rosdriver')
-from sofiehdfformat_rosdriver.import_csv_data import importARData
-
+from sofiehdfformat_rosdriver.import_csv_data import importARData,importBagData
+import os, tempfile
 SMALLMARKER=58.7
 BIGMARKER=97.0
 ARRUNEXTENSION='/ar'
+USBCAMERATOPIC='/usb_cam/image_raw'
 
 class ARListener(object):
     """
@@ -17,6 +18,10 @@ class ARListener(object):
         else:
             launchFile = 'simple_bridge_1920.launch'
         self.filename = outfile
+        
+        self.tmpdir = tempfile.mkdtemp()
+        self.usbCamBagFilename = os.path.join(self.tmpdir, 'usbcam.bag')
+        
         self.runName = runName+ARRUNEXTENSION
         self.processString = \
             ['roslaunch',
@@ -26,6 +31,8 @@ class ARListener(object):
             'runname:='+self.runName,
             'videodevice:='+videoDevice,
             'markersize:='+str(markerSize),
+            'usbcamrosbag:='+self.usbCamBagFilename,
+            'usbcamtopic:='+USBCAMERATOPIC,
             ];
 
     def __del__(self):
@@ -41,5 +48,10 @@ class ARListener(object):
 
     def close(self):
         importARData(self.filename,self.runName)
+        importBagData(self.filename,self.usbCamBagFilename,self.runName)
+        if os.path.isfile(self.usbCamBagFilename):
+            os.remove(self.usbCamBagFilename)
+        if os.path.isdir(self.tmpdir):
+            os.rmdir(self.tmpdir)
         self.process.terminate()
         
