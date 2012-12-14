@@ -80,8 +80,8 @@ class ExperimentControlBackground(model.Background):
         # including sizer setup, do it here
         # self.loadConfig()
         self.startTitle = self.title
-        executionThread = ExecutionThread(self)
-        executionThread.start()
+        self.executionThread = ExecutionThread(self)
+        self.executionThread.start()
 
     def loadConfig(self):
         pass
@@ -256,47 +256,50 @@ class ExecutionThread(threading.Thread):
         threading.Thread.__init__ (self)
     def run (self):
         print "ExecutionThread: starting loop"
-        while True:
-            #Waiting to run
-            print 'Waiting to run.'
-            while self.experimentControlBackground.running == False:
-                time.sleep(0.5)
-            #In A Run Cycle
-            #Setting up
-            print 'Settting Up'
-            self.experimentControlBackground.updateGlobalExperimentFeedBackSettingUp()
-            listeners = \
-            startExperiment(self.experimentControlBackground.filename, 
-                            self.experimentControlBackground.runName,
-                    self.experimentControlBackground.serialImu,
-                    self.experimentControlBackground.serialAnt,
-                    self.experimentControlBackground.serialAr,
-                    imuPort=self.experimentControlBackground.imuPort,
-                    imuHost=self.experimentControlBackground.imuHost)
-            i=ITERATIONS_SETTING_UP;
-            while i>0:
-                time.sleep(1)
-                i -= 1
-                print '.'
-            print 'Running'
-            self.experimentControlBackground.updateGlobalExperimentFeedBackRunning()
-            while self.experimentControlBackground.running == True:
-                syncListeners(listeners)
-                time.sleep(0.25)
-            #Tearing Down
-            print 'Tear down'
-            self.experimentControlBackground.updateGlobalExperimentFeedBackTearingDown()
-            i=ITERATIONS_TEARING_DOWN;
-            while i>0:
-                time.sleep(1)
-                i -= 1
-                print '.'
-            print 'Stopped'
-            shutDownExperiment(listeners)
-            self.experimentControlBackground.updateStartButtonStart()
-            self.experimentControlBackground.updateGlobalExperimentFeedBackInactive()
-            #Clean Up
-            listeners = []
+        try:
+            while True:
+                #Waiting to run
+                print 'Waiting to run.'
+                while self.experimentControlBackground.running == False:
+                    time.sleep(0.5)
+                #In A Run Cycle
+                #Setting up
+                print 'Settting Up'
+                self.experimentControlBackground.updateGlobalExperimentFeedBackSettingUp()
+                listeners = \
+                startExperiment(self.experimentControlBackground.filename, 
+                                self.experimentControlBackground.runName,
+                        self.experimentControlBackground.serialImu,
+                        self.experimentControlBackground.serialAnt,
+                        self.experimentControlBackground.serialAr,
+                        imuPort=self.experimentControlBackground.imuPort,
+                        imuHost=self.experimentControlBackground.imuHost)
+                i=ITERATIONS_SETTING_UP;
+                while i>0:
+                    time.sleep(1)
+                    i -= 1
+                    print '.'
+                print 'Running'
+                self.experimentControlBackground.updateGlobalExperimentFeedBackRunning()
+                while self.experimentControlBackground.running == True:
+                    syncListeners(listeners)
+                    time.sleep(0.25)
+                #Tearing Down
+                print 'Tear down'
+                self.experimentControlBackground.updateGlobalExperimentFeedBackTearingDown()
+                i=ITERATIONS_TEARING_DOWN;
+                while i>0:
+                    time.sleep(1)
+                    i -= 1
+                    print '.'
+                print 'Stopped'
+                shutDownExperiment(listeners)
+                self.experimentControlBackground.updateStartButtonStart()
+                self.experimentControlBackground.updateGlobalExperimentFeedBackInactive()
+                #Clean Up
+                listeners = []
+        except:
+            print 'Excpetion caught in processing thread.';
             
 if __name__ == '__main__':
     app = model.Application(ExperimentControlBackground)
