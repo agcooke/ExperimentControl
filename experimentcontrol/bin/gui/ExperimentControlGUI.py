@@ -5,16 +5,18 @@ __date__ = "$Date: 2004/08/12 19:14:23 $"
 PythonCard implementation of a GUI for the ExperimentControl
 """
 
-import os, sys
-import wx
-from wx.html import HtmlEasyPrinting
+import os, sys          
+#from wx.html import HtmlEasyPrinting
 from PythonCard import configuration, dialog, model
 from sofiehdfformat.core.SofiePyTableAccess import SofiePyTableAccess
 from experimentcontrol.core.control import startExperiment, syncListeners,shutDownExperiment,isCorrectFilename
 from experimentcontrol.core.Exceptions import OutFileMustBeAbsolutePath, OutFileMustBeh5Extention
-
+from wxAnyThread import anythread
 import time
-import thread
+import threading
+
+ITERATIONS_SETTING_UP=3
+ITERATIONS_TEARING_DOWN=3
 
 STARTBUTTON_BACKGROUNDCOLOR_START=(0, 255, 0, 255)
 STARTBUTTON_BACKGROUNDCOLOR_STOP=(255,0, 0, 255)
@@ -78,6 +80,8 @@ class ExperimentControlBackground(model.Background):
         # including sizer setup, do it here
         # self.loadConfig()
         self.startTitle = self.title
+        executionThread = ExecutionThread(self)
+        executionThread.start()
 
     def loadConfig(self):
         pass
@@ -223,70 +227,77 @@ class ExperimentControlBackground(model.Background):
         # put your About box here
         pass
     
+    @anythread 
     def updateGlobalExperimentFeedBackSettingUp(self):
         self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_SETTINGUP)
+    @anythread 
     def updateGlobalExperimentFeedBackRunning(self):
         self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_RUNNING)
+    @anythread 
     def updateGlobalExperimentFeedBackTearingDown(self):
         self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_TEARINGDOWN)
+    @anythread 
     def updateGlobalExperimentFeedBackInactive(self):
         self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_INACTIVE)
+    @anythread 
     def updateStartButtonStart(self):
         self.components.startStopButton.label = STARTBUTTON_START
         self.components.startStopButton.backgroundColor = STARTBUTTON_BACKGROUNDCOLOR_START
         self.components.startStopButton.enabled = True;
         self._updateRunList()
 
-def ExecutionThread(*argtuple):
-        """
+
+class ExecutionThread(threading.Thread):
+    """
         The Experiment Control Thread.
-        """
-        print "ExecutionThread: entered"
-        experimentControlBackground = argtuple[0]
+    """
+    def __init__ (self, experimentControlBackground):
+        self.experimentControlBackground = experimentControlBackground
+        threading.Thread.__init__ (self)
+    def run (self):
         print "ExecutionThread: starting loop"
         while True:
             #Waiting to run
             print 'Waiting to run.'
-            while experimentControlBackground.running == False:
+            while self.experimentControlBackground.running == False:
                 time.sleep(0.5)
             #In A Run Cycle
             #Setting up
             print 'Settting Up'
-            experimentControlBackground.updateGlobalExperimentFeedBackSettingUp()
+            self.experimentControlBackground.updateGlobalExperimentFeedBackSettingUp()
             listeners = \
-            startExperiment(experimentControlBackground.filename, 
-                            experimentControlBackground.runName,
-                    experimentControlBackground.serialImu,
-                    experimentControlBackground.serialAnt,
-                    experimentControlBackground.serialAr,
-                    imuPort=experimentControlBackground.imuPort,
-                    imuHost=experimentControlBackground.imuHost)
-            i=8;
+            startExperiment(self.experimentControlBackground.filename, 
+                            self.experimentControlBackground.runName,
+                    self.experimentControlBackground.serialImu,
+                    self.experimentControlBackground.serialAnt,
+                    self.experimentControlBackground.serialAr,
+                    imuPort=self.experimentControlBackground.imuPort,
+                    imuHost=self.experimentControlBackground.imuHost)
+            i=ITERATIONS_SETTING_UP;
             while i>0:
                 time.sleep(1)
                 i -= 1
                 print '.'
             print 'Running'
-            experimentControlBackground.updateGlobalExperimentFeedBackRunning()
-            while experimentControlBackground.running == True:
+            self.experimentControlBackground.updateGlobalExperimentFeedBackRunning()
+            while self.experimentControlBackground.running == True:
                 syncListeners(listeners)
                 time.sleep(0.25)
             #Tearing Down
             print 'Tear down'
-            experimentControlBackground.updateGlobalExperimentFeedBackTearingDown()
-            i=8;
+            self.experimentControlBackground.updateGlobalExperimentFeedBackTearingDown()
+            i=ITERATIONS_TEARING_DOWN;
             while i>0:
                 time.sleep(1)
                 i -= 1
                 print '.'
             print 'Stopped'
             shutDownExperiment(listeners)
-            experimentControlBackground.updateStartButtonStart()
-            experimentControlBackground.updateGlobalExperimentFeedBackInactive()
+            self.experimentControlBackground.updateStartButtonStart()
+            self.experimentControlBackground.updateGlobalExperimentFeedBackInactive()
             #Clean Up
             listeners = []
             
 if __name__ == '__main__':
     app = model.Application(ExperimentControlBackground)
-    thread.start_new_thread(ExecutionThread, (app.getCurrentBackground(),))
     app.MainLoop()
