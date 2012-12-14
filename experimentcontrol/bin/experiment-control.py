@@ -18,6 +18,8 @@ from experimentcontrol.core.ARListener import ARListener,BIGMARKER,SMALLMARKER
 from experimentcontrol.core.AntPlusListener import AntPlusListener
 from experimentcontrol.core.InertiaTechnologyListener import IntertiaTechnologyListener
 from experimentcontrol.core.antlogging import setLogger
+from experimentcontrol.core.control import startExperiment, syncListeners,shutDownExperiment,isCorrectFilename
+from experimentcontrol.core.Exceptions import OutFileMustBeAbsolutePath, OutFileMustBeh5Extention
 NETKEY = '\xB9\xA5\x21\xFB\xBD\x72\xC3\x45'
 
 # Event callback
@@ -48,7 +50,7 @@ Visit http://mobilitylabtwente.nl/sofie for more information.
         help="The Port for the IMU socket server, defaults to 1234.")
     parser.add_option('--imuhost', '-m', default='127.0.0.1',
         help="The host for the IMU socket server.")
-    parser.add_option('--ardevice', '-a', default=None,
+    parser.add_option('--serialar', '-a', default=None,
         help="The camera to use for the ROS AR tracking.")
     parser.add_option('--highres', '-c', action="store_true", dest="highres",
         default=False,help="Defaults to low res.")
@@ -70,19 +72,21 @@ Visit http://mobilitylabtwente.nl/sofie for more information.
         print "Specify the out file (--outfile filename)"
         print "\n\n-------------------------------\n"
         exit()
-    if(os.path.isabs(options.outfile)==False):
-        print "\n\n-------------------------------\n"
-        print "The Outfile ({0}) must be specified as an absolute path.".\
-            format(options.outfile)
-        print "\n\n-------------------------------\n"
-        exit()
-    extensionOut = os.path.splitext(options.outfile)
-    if(extensionOut[1]!='.h5'):
+    try:
+        isCorrectFilename(options.outfile);
+    except OutFileMustBeh5Extention:
         print "\n\n-------------------------------\n"
         print "The Outfile ({0}) must be specified have an '.h5' extension.".\
             format(options.outfile)
         print "\n\n-------------------------------\n"
         exit()
+    except OutFileMustBeAbsolutePath:
+        print "\n\n-------------------------------\n"
+        print "The Outfile ({0}) must be specified as an absolute path.".\
+            format(options.outfile)
+        print "\n\n-------------------------------\n"
+        exit()
+
     if(options.runname==None):
         print "\n\n-------------------------------\n"
         print "Specify the rest run name (--runname 01CornerTestRun) "
@@ -96,36 +100,13 @@ Visit http://mobilitylabtwente.nl/sofie for more information.
             format(options.runname,options.outfile,currentRuns)
         print "\n\n-------------------------------\n"
         exit()
-
-    logging.debug('Creating InertiaTechnoogyListener:')
-    if options.serialimu:
-        print "\n\n-------------------------------\n"
-        print "IMU ENABLED"
-        print "\n\n-------------------------------\n"
-        intertiaTechnologyListener = IntertiaTechnologyListener(
-            options.outfile,options.runname,
-            options.imuport,options.imuhost,options.serialimu)
-        intertiaTechnologyListener.open()
-
-    if options.serialant:
-        print "\n\n-------------------------------\n"
-        print "ANT ENABLED"
-        print "\n\n-------------------------------\n"
-        antPlusListener = AntPlusListener(options.outfile,
-            options.runname,
-            options.serialant)
-        antPlusListener.open()
-    if options.ardevice:
-        print "\n\n-------------------------------\n"
-        print "AR ENABLED"
-        print "\n\n-------------------------------\n"
-        arListener = ARListener(
-            options.outfile,options.runname,
-            options.ardevice,highRes=options.highres,
-            markerSize=options.bigmarker)
-        arListener.open()
-
     
+    listeners = \
+        startExperiment(options.outfile, options.runname,
+                    options.serialimu,options.serialant,options.serialar,
+                    imuPort=options.imuport,imuHost=options.imuhost,
+                    arHighRes=options.highres,arMarkerSize=options.bigmarker)
+   
     print "\n\n-------------------------------\n"
     print "LOGGING SETUP: CALLIBRATION STILL PERIOD STARTS"
     print "\n\n-------------------------------\n"
@@ -147,14 +128,8 @@ Visit http://mobilitylabtwente.nl/sofie for more information.
 
             command=raw_input('HIT ENTER TO SEND SYNC SIGNALS:')
             logging.debug("raw_input = {0}".format(command));
-            #1=Trigger event for syncing.
-            logging.debug('SYNC')
-            if options.serialimu:
-                print "IMU SYNC"
-                intertiaTechnologyListener.sync()
-            if options.serialant:
-                print "ANT SYNC"
-                antPlusListener.sync()
+            syncListeners(listeners)
+            print 'SYNC SIGNAL SENT'
     except KeyboardInterrupt:
         pass;
     print "\n\n-------------------------------\n"
@@ -173,22 +148,7 @@ Visit http://mobilitylabtwente.nl/sofie for more information.
     print "-------------------------------------------------------"
     print "SHUTTING DOWN"
     print "\n\n-------------------------------\n"
-    if options.serialant:
-        print "\n\n-------------------------------------------------------"
-        print "-------------------------------------------------------"
-        print "------------------------CLOSING ANT------------------------"
-        antPlusListener.close()
-    if options.serialimu:
-        print "\n\n-------------------------------------------------------"
-        print "-------------------------------------------------------"
-        print "------------------------CLOSING IMU------------------------"
-        intertiaTechnologyListener.close()
-    if options.ardevice:
-        print "\n\n-------------------------------------------------------"
-        print "-------------------------------------------------------"
-        print "------------------------CLOSING AR------------------------"
-        arListener.close()
-    print "\n\n-------------------------------\n"
+    shutDownExperiment(listeners)
     print "EXITING (YOU CAN NOW MOVE): RUN {0}  in file {1} COMPLETED".format(
         options.runname,options.outfile)
     print "\n\n-------------------------------\n"
