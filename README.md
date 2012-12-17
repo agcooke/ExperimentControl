@@ -35,8 +35,8 @@ Description on how to start an experiment:
 
 Dependencies
 ------------
-sofiehdfformat - https://github.com/agcooke/Sofie-HDF-Format
-
+PythonCard -  Install from repository.
+PyTables - Best way to get this set up is to just install vitables from the repository.
 Install
 ===========
 Linux:
