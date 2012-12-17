@@ -35,7 +35,6 @@ Description on how to start an experiment:
 
 Dependencies
 ------------
-python-ant - https://github.com/mvillalba/python-ant
 sofiehdfformat - https://github.com/agcooke/Sofie-HDF-Format
 
 Install

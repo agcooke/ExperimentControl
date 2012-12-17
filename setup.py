@@ -7,9 +7,9 @@ if os.name == 'nt':
     
 setup (
   name = 'ExperimentControl',
-  version = '0.1',
+  version = '0.4',
   packages = find_packages(),
-  install_requires=['sofiehdfformat'],
+  install_requires=['sofiehdfformat','PythonCard','wxAnyThread'],
   author = 'ExperimentControl Team',
   author_email = 'adrian "dot" cooke {at} u t wente <dot> nl',
   description = 'USB Ant plust listener, IMU listerner and experiment run organiser.',
