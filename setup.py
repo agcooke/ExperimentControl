@@ -16,8 +16,9 @@ setup (
   url = 'https://github.com/agcooke/ExperimentControl',
   license = open('LICENSE.md').read(),
   long_description=open('README.md').read(),
-  scripts = [os.path.join('experimentcontrol','bin','experiment-control.py'),
-             os.path.join('experimentcontrol','bin','gui','experiment-control-gui.py')
+  scripts = [os.path.join('bin','experiment-control.py'),
+             os.path.join('bin','gui','experiment-control-gui.py'),
+             os.path.join('bin','gui','experiment-control-gui.rsrc.py'),
              ],
   console = [os.path.join('experimentcontrol','bin','experiment-control.py')]
 )
