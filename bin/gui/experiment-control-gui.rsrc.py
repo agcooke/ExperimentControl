@@ -83,14 +83,23 @@
          'components': [
 
 {'type':'CheckBox', 
+    'name':'verboseCheckBox', 
+    'position':(590, 380), 
+    'backgroundColor':(224, 222, 220, 255), 
+    'label':u'Verbose', 
+    },
+
+{'type':'CheckBox', 
     'name':'runCorrupted', 
     'position':(440, 410), 
+    'backgroundColor':(224, 222, 220, 255), 
     'label':u'Run Corrupted', 
     },
 
 {'type':'CheckBox', 
     'name':'runSuccessful', 
     'position':(300, 410), 
+    'backgroundColor':(224, 222, 220, 255), 
     'label':u'Run Successful', 
     },
 

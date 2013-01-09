@@ -10,11 +10,11 @@ and event handlers.
 import logging
 import os
 from subprocess import Popen
-
+import tempfile
 from experimentcontrol.core.InertiaTechnologySocketDriver import InertiaTechnologySocketDriver
 from sofiehdfformat.core.SofieFileUtils import importdata
 NETKEY = '\xB9\xA5\x21\xFB\xBD\x72\xC3\x45'
-TMPLOGFILE=os.path.abspath(os.path.join('.','tmp-output.csv'));
+TMPLOGFILE='tmp-output.csv';
 IMURUNEXTENSION='/imu'
 IMUPORT=1234
 IMUHOST='127.0.0.1'
@@ -29,6 +29,9 @@ class IntertiaTechnologyListener(object):
             mode='w')
         self.outfile = outfile;
         self.runName = runName+IMURUNEXTENSION;
+        
+        self.tmpdir = tempfile.mkdtemp()
+        self.tmplogfile = os.path.join(self.tmpdir, TMPLOGFILE)
     def __del__(self):
         self.driver.close();
         self.process.terminate()
@@ -41,7 +44,7 @@ class IntertiaTechnologyListener(object):
         logging.debug('Opening Socket')
         self.driver.open();
 
-        self.driver.startRecording(TMPLOGFILE);
+        self.driver.startRecording(self.tmplogfile);
 
     def sync(self):
         #Setup the logger:
@@ -50,11 +53,15 @@ class IntertiaTechnologyListener(object):
 
     def close(self):
         self.driver.stopRecording();
-        if os.path.isfile(TMPLOGFILE):
-            importdata(TMPLOGFILE,
+        if os.path.isfile(self.tmplogfile):
+            importdata(self.tmplogfile,
                 self.outfile,
                 self.runName,
                 'description',
                 True,
                 False)
+        if os.path.isfile(self.tmplogfile):
+            os.remove(self.tmplogfile)
+        if os.path.isdir(self.tmpdir):
+            os.rmdir(self.tmpdir)
         self.process.terminate()

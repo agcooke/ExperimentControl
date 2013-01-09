@@ -15,6 +15,9 @@ from experimentcontrol.core.Exceptions import OutFileMustBeAbsolutePath, OutFile
 from wxAnyThread import anythread
 import time
 import threading
+import traceback
+import logging
+from experimentcontrol.core.antlogging import setLogger
 
 ITERATIONS_SETTING_UP=8
 ITERATIONS_TEARING_DOWN=2
@@ -29,6 +32,9 @@ EXPERIMENTSTATUS_INACTIVE='INACTIVE'
 EXPERIMENTSTATUS_SETTINGUP='SETTING UP'
 EXPERIMENTSTATUS_RUNNING='DO THE EXPERIMENT NOW'
 EXPERIMENTSTATUS_TEARINGDOWN='EXPERIMENT BUSY SHUTTING DOWN'
+EXPERIMENTSTATUS_ERRORSETTINGUP='ERROR SETTING UP'
+EXPERIMENTSTATUS_ERRORTEARINGDOWN='ERROR TEARINGDOWN'
+EXPERIMENTSTATUS_ERRORRUNNING='ERROR RUNNING'
 
 def textToHtml(txt):
     # the wxHTML classes don't require valid HTML
@@ -71,6 +77,8 @@ class ExperimentControlBackground(model.Background):
                                    str(device),'Device Problem')
                 return False
         return True
+    def _getBaseRunName(self,runName):
+        return runName.split('/')[1]
     
     def _updateGlobalExperimentFeedback(self,status):
         self.components.globalExperimentFeedback.clear()
@@ -123,7 +131,7 @@ class ExperimentControlBackground(model.Background):
         self.statusBar.text = self.filename
         self._updateRunList()  
     def on_runList_mouseUp(self, event):
-        self.runName = self.components.runList.stringSelection
+        self.runName = self._getBaseRunName(self.components.runList.stringSelection)
         self.components.runName.clear()
         self.components.runName.writeText(self.runName)
 
@@ -132,8 +140,10 @@ class ExperimentControlBackground(model.Background):
         if not self.runName:
             dialog.alertDialog(self,'The Run Name is not set.','Check you run name')
             return False
+        
         if self.filename:
-            if self.runName in SofiePyTableAccess.getRunsInTheFile(self.filename):
+            theRuns = [self._getBaseRunName(runName) for runName in SofiePyTableAccess.getRunsInTheFile(self.filename)];
+            if self.runName in theRuns:
                 dialog.alertDialog(self,'The Run Name already exists.','Check you run name')
                 return False
         return True
@@ -167,6 +177,18 @@ class ExperimentControlBackground(model.Background):
             self.running = False;
             self.components.startStopButton.label = STARTBUTTON_WAIT
             self.components.startStopButton.enabled = False;
+            
+    def on_verboseCheckBox_mouseClick(self,event):
+        if self.components.verboseCheckBox.checked:
+            setLogger(logging.DEBUG)
+            logging.getLogger().setLevel(logging.DEBUG)
+            print 'Verbose mode on.'
+            logging.debug('Verbose on.')
+        else:
+            logging.getLogger().setLevel(logging.CRITICAL)
+            print 'Verbose mode off.'
+            logging.debug('Verbose off.')
+
     def on_menuFilePrint_select(self, event):
         # put your code here for print
         # the commented code below is from the textEditor tool
@@ -241,12 +263,24 @@ class ExperimentControlBackground(model.Background):
     def updateGlobalExperimentFeedBackInactive(self):
         self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_INACTIVE)
     @anythread 
+    def updateGlobalExperimentFeedBackErrorSettingUp(self):
+        self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_ERRORSETTINGUP)
+    @anythread 
+    def updateGlobalExperimentFeedBackErrorTearingDown(self):
+        self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_ERRORTEARINGDOWN)
+    @anythread 
+    def updateGlobalExperimentFeedBackErrorRunning(self):
+        self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_ERRORRUNNING)
+    @anythread 
     def updateStartButtonStart(self):
         self.components.startStopButton.label = STARTBUTTON_START
         self.components.startStopButton.backgroundColor = STARTBUTTON_BACKGROUNDCOLOR_START
         self.components.startStopButton.enabled = True;
         self._updateRunList()
-
+        
+    @anythread
+    def setRunning(self,trueOrFalse):
+        self.running =  trueOrFalse
 
 class ExecutionThread(threading.Thread):
     """
@@ -257,16 +291,18 @@ class ExecutionThread(threading.Thread):
         threading.Thread.__init__ (self)
     def run (self):
         print "ExecutionThread: starting loop"
-        try:
-            while True:
-                #Waiting to run
-                print 'Waiting to run.'
-                while self.experimentControlBackground.running == False:
-                    time.sleep(0.5)
-                #In A Run Cycle
-                #Setting up
-                print 'Settting Up'
-                self.experimentControlBackground.updateGlobalExperimentFeedBackSettingUp()
+       
+        while True:
+            #Waiting to run
+            print 'Waiting to run.'
+            while self.experimentControlBackground.running == False:
+                time.sleep(0.5)
+            #In A Run Cycle
+            #Setting up
+            print 'Settting Up'
+            try:
+                self.experimentControlBackground.\
+                    updateGlobalExperimentFeedBackSettingUp()
                 listeners = \
                 startExperiment(self.experimentControlBackground.filename, 
                                 self.experimentControlBackground.runName,
@@ -280,14 +316,25 @@ class ExecutionThread(threading.Thread):
                     time.sleep(1)
                     i -= 1
                     print '.'
-                print 'Running'
-                self.experimentControlBackground.updateGlobalExperimentFeedBackRunning()
+            except Exception as ex:
+                print 'ERROR SETTING UP:{0}'.format(str(ex))
+                self.experimentControlBackground.\
+                    updateGlobalExperimentFeedBackErrorSettingUp()
+            print 'Running'
+            try:
+                self.experimentControlBackground.\
+                    updateGlobalExperimentFeedBackRunning()
                 while self.experimentControlBackground.running == True:
                     syncListeners(listeners)
                     time.sleep(0.25)
-                #Tearing Down
-                print 'Tear down'
-                self.experimentControlBackground.updateGlobalExperimentFeedBackTearingDown()
+            except Exception as ex:
+                print 'ERROR RUNNING:{0}'.format(str(ex))
+                self.experimentControlBackground.updateGlobalExperimentFeedBackErrorRunning()
+            #Tearing Down
+            print 'Tear down'
+            try:
+                self.experimentControlBackground.\
+                    updateGlobalExperimentFeedBackTearingDown()
                 i=ITERATIONS_TEARING_DOWN;
                 while i>0:
                     time.sleep(1)
@@ -296,11 +343,19 @@ class ExecutionThread(threading.Thread):
                 print 'Stopped'
                 shutDownExperiment(listeners)
                 self.experimentControlBackground.updateStartButtonStart()
-                self.experimentControlBackground.updateGlobalExperimentFeedBackInactive()
+                self.experimentControlBackground.\
+                    updateGlobalExperimentFeedBackInactive()
                 #Clean Up
                 listeners = []
-        except:
-            print 'Excpetion caught in processing thread.';
+            except Exception as ex:
+                print 'ERROR RUNNING:{0}:\n{1}'.format(str(ex),traceback.print_exc())
+                self.experimentControlBackground.\
+                    updateGlobalExperimentFeedBackErrorTearingDown()
+                time.sleep(2)
+                self.experimentControlBackground.setRunning(False)
+                self.experimentControlBackground.updateStartButtonStart()
+                self.experimentControlBackground.\
+                    updateGlobalExperimentFeedBackInactive()
             
 if __name__ == '__main__':
     app = model.Application(ExperimentControlBackground)
