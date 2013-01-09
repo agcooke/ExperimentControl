@@ -55,8 +55,10 @@ class ExperimentControlBackground(model.Background):
     running = False
     
     def _updateRunList(self):
-        self.components.runList.clear()           
-        self.components.runList.insertItems(SofiePyTableAccess.getRunsInTheFile(self.filename),0)
+        self.components.runList.clear()
+        runList = [self._getBaseRunName(runName) for runName in 
+                    SofiePyTableAccess.getRunsInTheFile(self.filename)]       
+        self.components.runList.insertItems(runList,0)
         
     def _getPathFromDialog(self, 
                wildCard = "USB Serial device (*ttyUSB*)|*ttyUSB*|Serial device (*tty*)|*tty*|All files (*.*)|*.*"):
@@ -78,11 +80,64 @@ class ExperimentControlBackground(model.Background):
                 return False
         return True
     def _getBaseRunName(self,runName):
-        return runName.split('/')[1]
+        runNameSplit = runName.split('/')
+        if len(runNameSplit) >= 2:
+            return runNameSplit[1]
+        return runName
     
     def _updateGlobalExperimentFeedback(self,status):
         self.components.globalExperimentFeedback.clear()
         self.components.globalExperimentFeedback.writeText(status)
+        
+    def _getTextArea(self,textAreaName):
+        numberOflines = self.components.get(textAreaName).getNumberOfLines()
+        theText = '\n'.join([self.components.get(textAreaName).getLineText(i) 
+                   for i in range(0,numberOflines-1)])
+        return theText
+    
+    def _setText(self,textComponentName,theText):
+        self.components.get(textComponentName).clear()
+        self.components.get(textComponentName).appendText(theText)
+        
+    def _setRunMeta(self,runName):
+        runName = self._getBaseRunName(runName)
+        runMeta = {'runName':runName,
+                    'runExperimentType': self.components.runExperimentType.getLineText(0),
+                           'runSubject':self.components.runSubject.getLineText(0),
+                           'runObject':self.components.runObject.getLineText(0),
+                           'runSuccessful':self.components.runSuccessful.checked,
+                           'runCorrupted':self.components.runCorrupted.checked,
+                           'runNotes':self._getTextArea('runNotes')
+                           }
+        logging.debug(runMeta)
+        SofiePyTableAccess.setRunMetaInFile(self.filename, runMeta)
+        
+    def _getRunMeta(self,runName):
+        runMeta = SofiePyTableAccess.getRunMetaInFile(self.filename, runName)
+        if runMeta:
+            runNotes =runMeta['runNotes']
+            runSubject =runMeta['runSubject']
+            runObject =runMeta['runObject']
+            runSuccessful =runMeta['runSuccessful']
+            runCorrupted =runMeta['runCorrupted']
+            runExperimentType =runMeta['runExperimentType']
+            
+            self._setText('runExperimentType',runExperimentType)
+            self._setText('runNotes',runNotes)
+            self._setText('runSubject',runSubject)
+            self._setText('runObject',runObject)
+            self.components.runSuccessful.checked = runSuccessful
+            self.components.runCorrupted.checked = runCorrupted
+            self._setText('runExperimentType',runExperimentType)
+        else:
+            self._setText('runExperimentType',None)
+            self._setText('runNotes',None)
+            self._setText('runSubject',None)
+            self._setText('runObject',None)
+            self.components.runSuccessful.checked = False
+            self.components.runCorrupted.checked = False
+            self._setText('runExperimentType',None)
+        
             
     def on_initialize(self, event):
         # if you have any initialization
@@ -134,19 +189,20 @@ class ExperimentControlBackground(model.Background):
         self.runName = self._getBaseRunName(self.components.runList.stringSelection)
         self.components.runName.clear()
         self.components.runName.writeText(self.runName)
-
+        self._getRunMeta(self.runName)
     def on_runName_loseFocus(self, event=None):
         self.runName = self.components.runName.getLineText(0)
         if not self.runName:
             dialog.alertDialog(self,'The Run Name is not set.','Check you run name')
             return False
-        
+        self._setRunMeta(self.runName)
         if self.filename:
             theRuns = [self._getBaseRunName(runName) for runName in SofiePyTableAccess.getRunsInTheFile(self.filename)];
             if self.runName in theRuns:
                 dialog.alertDialog(self,'The Run Name already exists.','Check you run name')
                 return False
         return True
+    
     def on_serialImu_mouseDoubleClick(self, event):
         self.serialImu = self._getPathFromDialog()
         self.components.serialImu.writeText(self.serialImu)
@@ -169,6 +225,7 @@ class ExperimentControlBackground(model.Background):
             return False
         if self.components.startStopButton.checked:
             #------- dialog.alertDialog(self,'Startng RUN','Check you run name')
+            self._setRunMeta(self.runName)
             self.components.startStopButton.label = STARTBUTTON_STOP
             self.components.startStopButton.backgroundColor = STARTBUTTON_BACKGROUNDCOLOR_STOP
             self.running = True;
@@ -188,6 +245,8 @@ class ExperimentControlBackground(model.Background):
             logging.getLogger().setLevel(logging.CRITICAL)
             print 'Verbose mode off.'
             logging.debug('Verbose off.')
+            
+    
 
     def on_menuFilePrint_select(self, event):
         # put your code here for print
