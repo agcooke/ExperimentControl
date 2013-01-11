@@ -195,8 +195,6 @@ class ExperimentControlBackground(model.Background):
         self.components.runName.clear()
         self.components.runName.writeText(self.runName)
         self._getRunMeta(self.runName)
-        
-        
     def on_runExperimentType_loseFocus(self, event=None):
         self._setRunMeta(self.runName)
     def on_runSubject_loseFocus(self, event=None):
@@ -209,7 +207,6 @@ class ExperimentControlBackground(model.Background):
         self._setRunMeta(self.runName)
     def on_runNotes_loseFocus(self, event=None):
         self._setRunMeta(self.runName)
-    
     def on_runName_loseFocus(self, event=None):
         self.runName = self.components.runName.getLineText(0)
         if not self.runName:
