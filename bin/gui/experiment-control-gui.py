@@ -263,26 +263,8 @@ class ExperimentControlBackground(model.Background):
             print 'Verbose mode off.'
             logging.debug('Verbose off.')
             
-    
-
-    def on_menuFilePrint_select(self, event):
-        # put your code here for print
-        # the commented code below is from the textEditor tool
-        # and is simply an example
-        
-        #source = textToHtml(self.components.fldDocument.text)
-        #self.printer.PrintText(source)
+    def on_menuFileNew_select(self, event):
         pass
-    def on_menuFilePrintPreview_select(self, event):
-        # put your code here for print preview
-        # the commented code below is from the textEditor tool
-        # and is simply an example
-        
-        #source = textToHtml(self.components.fldDocument.text)
-        #self.printer.PreviewText(source)
-        pass
-    def on_menuFilePageSetup_select(self, event):
-        self.printer.PageSetup()
     # the following was copied and pasted from the searchexplorer sample
     def on_menuEditUndo_select(self, event):
         widget = self.findFocus()

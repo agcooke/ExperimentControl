@@ -15,6 +15,10 @@
              'label':'&File',
              'items': [
                   {'type':'MenuItem',
+                   'name':'menuFileNew',
+                   'label':u'New',
+                  },
+                  {'type':'MenuItem',
                    'name':'fileSep2',
                    'label':'-',
                   },
