@@ -86,6 +86,22 @@
      },
          'components': [
 
+{'type':'Button', 
+    'name':'openInVitables', 
+    'position':(327, 18), 
+    'size':(205, 35), 
+    'backgroundColor':(0, 220, 244, 255), 
+    'label':u'Open in Vitables', 
+    },
+
+{'type':'Button', 
+    'name':'saveMetaData', 
+    'position':(262, 175), 
+    'size':(270, 54), 
+    'backgroundColor':(0, 220, 244, 255), 
+    'label':u'Save Meta Data', 
+    },
+
 {'type':'StaticBox', 
     'name':'experimentBox', 
     'position':(13, 149), 
@@ -209,7 +225,7 @@
 {'type':'StaticBox', 
     'name':'h5Filename', 
     'position':(16, 6), 
-    'size':(314, 50), 
+    'size':(520, 50), 
     'backgroundColor':(242, 241, 240, 255), 
     'label':u'H5 File', 
     },
@@ -262,7 +278,7 @@
 
 {'type':'List', 
     'name':'runList', 
-    'position':(552, 42), 
+    'position':(554, 40), 
     'size':(241, 490), 
     'backgroundColor':(242, 241, 240, 255), 
     'items':[], 

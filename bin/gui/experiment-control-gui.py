@@ -17,6 +17,7 @@ import time
 import threading
 import traceback
 import logging
+import subprocess
 from experimentcontrol.core.antlogging import setLogger
 
 ITERATIONS_SETTING_UP=8
@@ -57,7 +58,9 @@ class ExperimentControlBackground(model.Background):
     def _updateRunList(self):
         self.components.runList.clear()
         runList = [self._getBaseRunName(runName) for runName in 
-                    SofiePyTableAccess.getRunsInTheFile(self.filename)]       
+                    SofiePyTableAccess.getRunsInTheFile(self.filename)
+                    if runName != '/RunMeta'
+                    ]       
         self.components.runList.insertItems(runList,0)
         
     def _getPathFromDialog(self, 
@@ -195,24 +198,24 @@ class ExperimentControlBackground(model.Background):
         self.components.runName.clear()
         self.components.runName.writeText(self.runName)
         self._getRunMeta(self.runName)
-    def on_runExperimentType_loseFocus(self, event=None):
-        self._setRunMeta(self.runName)
-    def on_runSubject_loseFocus(self, event=None):
-        self._setRunMeta(self.runName)  
-    def on_runObject_loseFocus(self, event=None):
-        self._setRunMeta(self.runName)
-    def on_runSuccessful_loseFocus(self, event=None):
-        self._setRunMeta(self.runName)
-    def on_runCorrupted_loseFocus(self, event=None):
-        self._setRunMeta(self.runName)
-    def on_runNotes_loseFocus(self, event=None):
-        self._setRunMeta(self.runName)
+    #--------------------- def on_runExperimentType_loseFocus(self, event=None):
+        #---------------------------------------- self._setRunMeta(self.runName)
+    #---------------------------- def on_runSubject_loseFocus(self, event=None):
+        #---------------------------------------- self._setRunMeta(self.runName)
+    #----------------------------- def on_runObject_loseFocus(self, event=None):
+        #---------------------------------------- self._setRunMeta(self.runName)
+    #------------------------- def on_runSuccessful_loseFocus(self, event=None):
+        #---------------------------------------- self._setRunMeta(self.runName)
+    #-------------------------- def on_runCorrupted_loseFocus(self, event=None):
+        #---------------------------------------- self._setRunMeta(self.runName)
+    #------------------------------ def on_runNotes_loseFocus(self, event=None):
+        #---------------------------------------- self._setRunMeta(self.runName)
     def on_runName_loseFocus(self, event=None):
         self.runName = self.components.runName.getLineText(0)
         if not self.runName:
             dialog.alertDialog(self,'The Run Name is not set.','Check you run name')
             return False
-        self._setRunMeta(self.runName)
+        #---------------------------------------- self._setRunMeta(self.runName)
         if self.filename:
             theRuns = [self._getBaseRunName(runName) for runName in SofiePyTableAccess.getRunsInTheFile(self.filename)];
             if self.runName in theRuns:
@@ -227,6 +230,14 @@ class ExperimentControlBackground(model.Background):
         self.serialAr = self._getPathFromDialog(
                 wildCard = "Serial device (*video*)|*video*|All files (*.*)|*.*")
         self.components.serialAr.writeText(self.serialAr)
+        
+    def on_openInVitables_mouseClick(self,event):
+        if self.filename:
+            subprocess.Popen(["vitables", self.filename])
+        
+    def on_saveMetaData_mouseClick(self,event):  
+         self._setRunMeta(self.runName)
+    
     def on_startStopButton_mouseClick(self,event):  
         if not self.on_runName_loseFocus():
             return False
@@ -242,7 +253,7 @@ class ExperimentControlBackground(model.Background):
             return False
         if self.components.startStopButton.checked:
             #------- dialog.alertDialog(self,'Startng RUN','Check you run name')
-            self._setRunMeta(self.runName)
+            #------------------------------------ self._setRunMeta(self.runName)
             self.components.startStopButton.label = STARTBUTTON_STOP
             self.components.startStopButton.backgroundColor = STARTBUTTON_BACKGROUNDCOLOR_STOP
             self.running = True;
