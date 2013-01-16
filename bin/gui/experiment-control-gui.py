@@ -220,7 +220,7 @@ class ExperimentControlBackground(model.Background):
         if not self.runName:
             dialog.alertDialog(self,'The Run Name is not set.','Check you run name')
             return False
-        #---------------------------------------- self._setRunMeta(self.runName)
+        self._setRunMeta(self.runName)
         if self.filename:
             theRuns = [self._getBaseRunName(runName) for runName in SofiePyTableAccess.getRunsInTheFile(self.filename)];
             if self.runName in theRuns:
