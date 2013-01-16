@@ -18,10 +18,12 @@ import threading
 import traceback
 import logging
 import subprocess
-from experimentcontrol.core.antlogging import setLogger
+from experimentcontrol.core.experimentcontrollogging import setLogger
 
 ITERATIONS_SETTING_UP=8
 ITERATIONS_TEARING_DOWN=2
+
+UNTITLEDFILENAME='untitled.h5'
 
 STARTBUTTON_BACKGROUNDCOLOR_START=(0, 255, 0, 255)
 STARTBUTTON_BACKGROUNDCOLOR_STOP=(255,0, 0, 255)
@@ -95,8 +97,8 @@ class ExperimentControlBackground(model.Background):
     def _getTextArea(self,textAreaName):
         numberOflines = self.components.get(textAreaName).getNumberOfLines()
         theText = '\n'.join([self.components.get(textAreaName).getLineText(i) 
-                   for i in range(0,numberOflines-1)])
-        logging.debug(theText)
+                   for i in range(0,numberOflines)])
+        logging.debug("GETTEXT AREA:"+theText)
         return theText
     
     def _setText(self,textComponentName,theText):
@@ -178,6 +180,9 @@ class ExperimentControlBackground(model.Background):
         self.components.filename.clear()
         self.components.filename.writeText(self.filename)
         self.on_filename_closeField()
+    def on_menuFileOpen_select(self,event):
+        self.on_filename_mouseDoubleClick(event)
+        
     def on_filename_closeField(self, event=None):
         self.filename = self.components.filename.getLineText(0)
         try:
@@ -275,7 +280,14 @@ class ExperimentControlBackground(model.Background):
             logging.debug('Verbose off.')
             
     def on_menuFileNew_select(self, event):
-        pass
+        result = dialog.directoryDialog(self, 'Choose a directory', '')
+        if result.accepted:
+            self.filename = os.path.join(result.path,UNTITLEDFILENAME)
+            self._setText('filename',self.filename)
+            
+        else:
+            return '';
+         
     # the following was copied and pasted from the searchexplorer sample
     def on_menuEditUndo_select(self, event):
         widget = self.findFocus()

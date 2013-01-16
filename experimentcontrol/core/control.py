@@ -10,7 +10,7 @@ from sofiehdfformat.core.SofiePyTableAccess import SofiePyTableAccess
 from experimentcontrol.core.ARListener import ARListener,BIGMARKER,SMALLMARKER
 from experimentcontrol.core.AntPlusListener import AntPlusListener
 from experimentcontrol.core.InertiaTechnologyListener import IntertiaTechnologyListener
-from experimentcontrol.core.antlogging import setLogger
+from experimentcontrol.core.experimentcontrollogging import setLogger
 from experimentcontrol.core.InertiaTechnologyListener import IMUPORT,IMUHOST
 from experimentcontrol.core.Exceptions import OutFileMustBeAbsolutePath,OutFileMustBeh5Extention
 import os
