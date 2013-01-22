@@ -3,12 +3,12 @@ import logging
 import time
 import roslib; roslib.load_manifest('sofiehdfformat_rosdriver')
 from sofiehdfformat_rosdriver.import_csv_data import importARData,importBagData
+from sofiehdfformat.core.config import USBCAMTMPFILE,ARRUNEXTENSION
 import os, tempfile
 SMALLMARKER=58.7
 BIGMARKER=97.0
-ARRUNEXTENSION='/ar'
 USBCAMERATOPIC='/usb_cam/image_raw'
-USBCAMTMPFILE='usbcam.bag'
+
 class ARListener(object):
     """
     Used to start and stop the ant plus listener
@@ -23,7 +23,7 @@ class ARListener(object):
         self.tmpdir = tempfile.mkdtemp()
         self.usbCamBagFilename = os.path.join(self.tmpdir, USBCAMTMPFILE)
         
-        self.runName = runName+ARRUNEXTENSION
+        self.runName = os.path.join(runName,ARRUNEXTENSION)
         self.processString = \
             ['roslaunch',
             'sofiehdfformat_rosdriver',

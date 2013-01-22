@@ -91,6 +91,13 @@
          'components': [
 
 {'type':'Button', 
+    'name':'viewVideo', 
+    'position':(270, 435), 
+    'backgroundColor':(0, 220, 244, 255), 
+    'label':u'View Video', 
+    },
+
+{'type':'Button', 
     'name':'openInVitables', 
     'position':(327, 18), 
     'size':(205, 35), 

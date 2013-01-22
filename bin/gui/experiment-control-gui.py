@@ -13,6 +13,8 @@ from sofiehdfformat.core.SofiePyTableAccess import SofiePyTableAccess
 from experimentcontrol.core.control import startExperiment, syncListeners,shutDownExperiment,isCorrectFilename
 from experimentcontrol.core.Exceptions import OutFileMustBeAbsolutePath, OutFileMustBeh5Extention
 from wxAnyThread import anythread
+import roslib; roslib.load_manifest('sofiehdfformat_rosdriver')
+from sofiehdfformat_rosdriver.import_csv_data import exportBagData
 import time
 import threading
 import traceback
@@ -59,10 +61,10 @@ class ExperimentControlBackground(model.Background):
     
     def _updateRunList(self):
         self.components.runList.clear()
-        runList = [self._getBaseRunName(runName) for runName in 
+        runList = list(set([self._getBaseRunName(runName) for runName in 
                     SofiePyTableAccess.getRunsInTheFile(self.filename)
                     if runName != '/RunMeta'
-                    ]       
+                    ] ))      
         self.components.runList.insertItems(runList,0)
         
     def _getPathFromDialog(self, 
@@ -239,6 +241,16 @@ class ExperimentControlBackground(model.Background):
     def on_openInVitables_mouseClick(self,event):
         if self.filename:
             subprocess.Popen(["vitables", self.filename])
+    
+    def on_viewVideo_mouseClick(self,event):
+        if not self.runName:
+            dialog.alertDialog(self,'The Run Name is not set.','Check you run name')
+            return
+        if not self.filename:
+            dialog.alertDialog(self,"The filename is not correct".\
+                format(self.filename),'Check you filename')
+            return
+        exportBagData(self.filename,self.runName)
         
     def on_saveMetaData_mouseClick(self,event):  
          self._setRunMeta(self.runName)
