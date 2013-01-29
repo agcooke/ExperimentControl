@@ -14,7 +14,7 @@ from experimentcontrol.core.control import startExperiment, syncListeners,shutDo
 from experimentcontrol.core.Exceptions import OutFileMustBeAbsolutePath, OutFileMustBeh5Extention
 from wxAnyThread import anythread
 import roslib; roslib.load_manifest('sofiehdfformat_rosdriver')
-from sofiehdfformat_rosdriver.import_csv_data import exportBagData
+from sofiehdfformat_rosdriver.fileUtils import exportBagData
 import time
 import threading
 import traceback

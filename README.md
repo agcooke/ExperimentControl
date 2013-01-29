@@ -44,6 +44,6 @@ Linux:
 Clone from git hub or download a latest tag.
 
 Install if you would like to:
-% python setup.py install
+		% python setup.py install
 
 Windows will not be supported at this stage.

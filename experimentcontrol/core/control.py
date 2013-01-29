@@ -63,6 +63,7 @@ def startExperiment(outfile,runName,serialIMU,serialAnt,serialAR,
             markerSize=arMarkerSize)
         arListener.open()
         listeners.append(arListener)
+    logging.debug('The Listerners: {0}'.format(listeners))
     return listeners
 
 def syncListeners(listeners):

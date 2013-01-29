@@ -2,8 +2,9 @@ from subprocess import Popen
 import logging
 import time
 import roslib; roslib.load_manifest('sofiehdfformat_rosdriver')
-from sofiehdfformat_rosdriver.import_csv_data import importARData,importBagData
-from sofiehdfformat.core.config import USBCAMTMPFILE,ARRUNEXTENSION
+from sofiehdfformat_rosdriver.fileUtils import importARData,importBagData
+from sofiehdfformat.core.config import getDefaultBagFileName,getARSubDirectory,getDefaultCSVFileName
+from sofiehdfformat.core.SofieFileUtils import cleanUpTempDirectory,createTempAndFileDirectory
 import os, tempfile
 SMALLMARKER=58.7
 BIGMARKER=97.0
@@ -18,21 +19,22 @@ class ARListener(object):
             launchFile = 'simple_bridge_normal.launch'
         else:
             launchFile = 'simple_bridge_1920.launch'
-        self.filename = outfile
-        
-        self.tmpdir = tempfile.mkdtemp()
-        self.usbCamBagFilename = os.path.join(self.tmpdir, USBCAMTMPFILE)
-        
-        self.runName = os.path.join(runName,ARRUNEXTENSION)
+        self.hdfFilename = outfile
+        self.temporyCSVFilename = createTempAndFileDirectory(getDefaultCSVFileName())
+        self.temporaryUSBCamBagFilename = createTempAndFileDirectory(getDefaultBagFileName())
+        logging.debug('The CSV TMP FILE: {0}: The Bag File:{1}'.format(self.temporyCSVFilename,
+                                                                       self.temporaryUSBCamBagFilename))
+        self.runName = getARSubDirectory(runName)
+        self.runNameBase = runName
+        #THE STRING USED TO START UP THE roslaunch sofiehdfformat_rosdriver' ROS launch file
         self.processString = \
             ['roslaunch',
             'sofiehdfformat_rosdriver',
             launchFile,
-            'filename:='+self.filename,
-            'runname:='+self.runName,
+            'csvfilename:='+self.temporyCSVFilename,
             'videodevice:='+videoDevice,
             'markersize:='+str(markerSize),
-            'usbcamrosbag:='+self.usbCamBagFilename,
+            'usbcamrosbag:='+self.temporaryUSBCamBagFilename,
             'usbcamtopic:='+USBCAMERATOPIC,
             ];
         logging.debug('The Processing String for AR Listener: '+str(self.processString))
@@ -51,10 +53,8 @@ class ARListener(object):
     def close(self):
         self.process.terminate()
         time.sleep(1)
-        importARData(self.filename,self.runName)
-        importBagData(self.filename,self.usbCamBagFilename,self.runName)
-        if os.path.isfile(self.usbCamBagFilename):
-            os.remove(self.usbCamBagFilename)
-        if os.path.isdir(self.tmpdir):
-            os.rmdir(self.tmpdir)
+        importARData(self.temporyCSVFilename,self.hdfFilename,self.runName)
+        cleanUpTempDirectory(self.temporyCSVFilename)
+        importBagData(self.temporaryUSBCamBagFilename,self.hdfFilename,self.runNameBase)
+        cleanUpTempDirectory(self.temporaryUSBCamBagFilename)
         
