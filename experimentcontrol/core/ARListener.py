@@ -1,24 +1,21 @@
 from subprocess import Popen
 import logging
 import time
-import roslib; roslib.load_manifest('sofiehdfformat_rosdriver')
-from sofiehdfformat_rosdriver.fileUtils import importARData,importBagData
+from sofiehdfformat.core.SofieFileUtils import importARData,importBagData
 from sofiehdfformat.core.config import getDefaultBagFileName,getARSubDirectory,getDefaultCSVFileName
 from sofiehdfformat.core.SofieFileUtils import cleanUpTempDirectory,createTempAndFileDirectory
 import os, tempfile
-SMALLMARKER=58.7
-BIGMARKER=97.0
+SMALLMARKER=12.0
+BIGMARKER=10.0
 USBCAMERATOPIC='/usb_cam/image_raw'
 
 class ARListener(object):
     """
     Used to start and stop the ant plus listener
     """
-    def __init__(self,outfile,runName,videoDevice,highRes=False,markerSize=SMALLMARKER):
-        if highRes == False:
-            launchFile = 'simple_bridge_normal.launch'
-        else:
-            launchFile = 'simple_bridge_1920.launch'
+    def __init__(self,outfile,runName,videoDevice,highRes=False,markerSize=SMALLMARKER,
+                 recordVideo=False):
+        launchFile = 'simple_bridge_normal.launch'
         self.hdfFilename = outfile
         self.temporyCSVFilename = createTempAndFileDirectory(getDefaultCSVFileName())
         self.temporaryUSBCamBagFilename = createTempAndFileDirectory(getDefaultBagFileName())
@@ -29,13 +26,14 @@ class ARListener(object):
         #THE STRING USED TO START UP THE roslaunch sofiehdfformat_rosdriver' ROS launch file
         self.processString = \
             ['roslaunch',
-            'sofiehdfformat_rosdriver',
+            'sofie_ros',
             launchFile,
             'csvfilename:='+self.temporyCSVFilename,
             'videodevice:='+videoDevice,
             'markersize:='+str(markerSize),
             'usbcamrosbag:='+self.temporaryUSBCamBagFilename,
             'usbcamtopic:='+USBCAMERATOPIC,
+            'recordvideo:='+str(recordVideo).lower(),
             ];
         logging.debug('The Processing String for AR Listener: '+str(self.processString))
 

@@ -13,8 +13,8 @@ from sofiehdfformat.core.SofiePyTableAccess import SofiePyTableAccess
 from experimentcontrol.core.control import startExperiment, syncListeners,shutDownExperiment,isCorrectFilename
 from experimentcontrol.core.Exceptions import OutFileMustBeAbsolutePath, OutFileMustBeh5Extention
 from wxAnyThread import anythread
-import roslib; roslib.load_manifest('sofiehdfformat_rosdriver')
-from sofiehdfformat_rosdriver.fileUtils import exportBagData
+from sofiehdfformat.core.SofieFileUtils import exportBagData
+from subprocess import Popen
 import time
 import threading
 import traceback
@@ -29,7 +29,12 @@ UNTITLEDFILENAME='untitled.h5'
 
 STARTBUTTON_BACKGROUNDCOLOR_START=(0, 255, 0, 255)
 STARTBUTTON_BACKGROUNDCOLOR_STOP=(255,0, 0, 255)
+VIEWBUTTON_BACKGROUNDCOLOR_START=(0, 255, 0, 255)
+VIEWBUTTON_BACKGROUNDCOLOR_STOP=(255,0, 0, 255)
 STARTBUTTON_START='Start'
+VIEWBUTTON_START='View Video'
+VIEWBUTTON_WAIT='Wait'
+VIEWBUTTON_RESET='Stop'
 STARTBUTTON_WAIT='Wait'
 STARTBUTTON_STOP='Stop'
 
@@ -58,6 +63,7 @@ class ExperimentControlBackground(model.Background):
     imuPort = 1234
     runName=None
     running = False
+    videoExporting = False
     
     def _updateRunList(self):
         self.components.runList.clear()
@@ -158,6 +164,8 @@ class ExperimentControlBackground(model.Background):
         self.startTitle = self.title
         self.executionThread = ExecutionThread(self)
         self.executionThread.start()
+        self.viewThread = ViewThread(self)
+        self.viewThread.start()
 
     def loadConfig(self):
         pass
@@ -242,6 +250,20 @@ class ExperimentControlBackground(model.Background):
         if self.filename:
             subprocess.Popen(["vitables", self.filename])
     
+    @anythread 
+    def cleanViewVideo(self):
+        self.components.viewVideo.label = VIEWBUTTON_START
+        self.components.viewVideo.backgroundColor = VIEWBUTTON_BACKGROUNDCOLOR_START
+        self.components.viewVideo.enabled = True
+        self.components.viewVideo.checked = False
+        self.videoExporting = False
+
+        
+    @anythread
+    def setupViewVideo(self):
+        self.components.viewVideo.label = VIEWBUTTON_RESET
+        self.components.viewVideo.backgroundColor = VIEWBUTTON_BACKGROUNDCOLOR_STOP
+        
     def on_viewVideo_mouseClick(self,event):
         if not self.runName:
             dialog.alertDialog(self,'The Run Name is not set.','Check you run name')
@@ -250,8 +272,12 @@ class ExperimentControlBackground(model.Background):
             dialog.alertDialog(self,"The filename is not correct".\
                 format(self.filename),'Check you filename')
             return
-        exportBagData(self.filename,self.runName)
-        
+        if self.components.viewVideo.checked:
+            self.videoExporting = True
+        else:
+            self.videoExporting = False
+            self.components.viewVideo.enabled = False;
+            
     def on_saveMetaData_mouseClick(self,event):  
          self._setRunMeta(self.runName)
     
@@ -403,7 +429,9 @@ class ExecutionThread(threading.Thread):
                         self.experimentControlBackground.serialAnt,
                         self.experimentControlBackground.serialAr,
                         imuPort=self.experimentControlBackground.imuPort,
-                        imuHost=self.experimentControlBackground.imuHost)
+                        imuHost=self.experimentControlBackground.imuHost,
+                        recordVideo=self.experimentControlBackground.components.recordVideo.checked
+                        )
                 i=ITERATIONS_SETTING_UP;
                 while i>0:
                     time.sleep(1)
@@ -449,6 +477,51 @@ class ExecutionThread(threading.Thread):
                 self.experimentControlBackground.updateStartButtonStart()
                 self.experimentControlBackground.\
                     updateGlobalExperimentFeedBackInactive()
+                    
+class ViewThread(threading.Thread):
+    """
+        The View Video Thread
+    """
+    def __init__ (self, experimentControlBackground):
+        self.experimentControlBackground = experimentControlBackground
+        threading.Thread.__init__ (self)
+    def run (self):
+        print "ViewVideoThread: starting loop"
+       
+        while True:
+            #Waiting to export
+            #print 'Waiting to Export.'
+            while self.experimentControlBackground.videoExporting == False:
+                time.sleep(0.5)
+            #print 'Exporting information.'
+            self.experimentControlBackground.setupViewVideo()
+            theProcess = None
+            try:
+                exportFileName = exportBagData(self.experimentControlBackground.filename,
+                                               self.experimentControlBackground.runName)
+            except:
+                self.experimentControlBackground.cleanViewVideo()
+                continue
+            try:
+                if self.experimentControlBackground.videoExporting == True:
+                    processString = \
+                        ['roslaunch',
+                        'sofie_ros',
+                        'play_back.launch',
+                        'usbcamrosbag:='+exportFileName,
+                        'playbackspeed:='+self.experimentControlBackground.
+                            components.playBackSpeed.getLineText(0)
+                        ];
+                    logging.debug('Executing command: '+str(processString))    
+                    theProcess = Popen(processString)
+                #print 'Waiting to Start again.'
+                while self.experimentControlBackground.videoExporting == True:
+                    time.sleep(0.1)
+            except:
+                pass
+            self.experimentControlBackground.cleanViewVideo()
+            if theProcess:
+                theProcess.terminate()
             
 if __name__ == '__main__':
     app = model.Application(ExperimentControlBackground)

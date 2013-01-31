@@ -28,7 +28,11 @@ def isCorrectFilename(filename):
         raise OutFileMustBeAbsolutePath
 
 def startExperiment(outfile,runName,serialIMU,serialAnt,serialAR,
-                    imuPort=IMUPORT,imuHost=IMUHOST,arHighRes=ARHIGHTRES,arMarkerSize=SMALLMARKER):
+                    imuPort=IMUPORT,imuHost=IMUHOST,
+                    arHighRes=ARHIGHTRES,
+                    arMarkerSize=SMALLMARKER,
+                    recordVideo=False
+                    ):
     logging.debug('Creating InertiaTechnoogyListener:')
     #tests
     if not os.path.isabs(outfile):
@@ -59,8 +63,11 @@ def startExperiment(outfile,runName,serialIMU,serialAnt,serialAR,
         logging.debug( "\n\n-------------------------------\n")
         arListener = ARListener(
             outfile,runName,
-            serialAR,highRes=arHighRes,
-            markerSize=arMarkerSize)
+            serialAR,
+            highRes=arHighRes,
+            markerSize=arMarkerSize,
+            recordVideo=recordVideo
+            )
         arListener.open()
         listeners.append(arListener)
     logging.debug('The Listerners: {0}'.format(listeners))
