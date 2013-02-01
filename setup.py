@@ -6,10 +6,10 @@ if os.name == 'nt':
     import py2exe
     
 setup (
-  name = 'ExperimentControl',
+  name = 'experimentcontrol',
   version = '0.4',
   packages = find_packages(),
-  install_requires=['sofiehdfformat','wxAnyThread'],
+  install_requires=[],
   author = 'ExperimentControl Team',
   author_email = 'adrian "dot" cooke {at} u t wente <dot> nl',
   description = 'USB Ant plust listener, IMU listerner and experiment run organiser.',
