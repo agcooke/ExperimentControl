@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 __version__ = "$Revision: 1.10 $"
 __date__ = "$Date: 2004/08/12 19:14:23 $"
