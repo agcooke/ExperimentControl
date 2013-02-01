@@ -17,7 +17,7 @@ from sofiehdfformat.core.SofiePyTableAccess import SofiePyTableAccess
 from experimentcontrol.core.ARListener import ARListener,BIGMARKER,SMALLMARKER
 from experimentcontrol.core.AntPlusListener import AntPlusListener
 from experimentcontrol.core.InertiaTechnologyListener import IntertiaTechnologyListener
-from experimentcontrol.core.antlogging import setLogger
+from experimentcontrol.core.experimentcontrollogging import setLogger
 from experimentcontrol.core.control import startExperiment, syncListeners,shutDownExperiment,isCorrectFilename
 from experimentcontrol.core.Exceptions import OutFileMustBeAbsolutePath, OutFileMustBeh5Extention
 NETKEY = '\xB9\xA5\x21\xFB\xBD\x72\xC3\x45'

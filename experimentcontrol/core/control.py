@@ -10,7 +10,7 @@ from sofiehdfformat.core.SofiePyTableAccess import SofiePyTableAccess
 from experimentcontrol.core.ARListener import ARListener,BIGMARKER,SMALLMARKER
 from experimentcontrol.core.AntPlusListener import AntPlusListener
 from experimentcontrol.core.InertiaTechnologyListener import IntertiaTechnologyListener
-from experimentcontrol.core.antlogging import setLogger
+from experimentcontrol.core.experimentcontrollogging import setLogger
 from experimentcontrol.core.InertiaTechnologyListener import IMUPORT,IMUHOST
 from experimentcontrol.core.Exceptions import OutFileMustBeAbsolutePath,OutFileMustBeh5Extention
 import os
@@ -28,7 +28,11 @@ def isCorrectFilename(filename):
         raise OutFileMustBeAbsolutePath
 
 def startExperiment(outfile,runName,serialIMU,serialAnt,serialAR,
-                    imuPort=IMUPORT,imuHost=IMUHOST,arHighRes=ARHIGHTRES,arMarkerSize=SMALLMARKER):
+                    imuPort=IMUPORT,imuHost=IMUHOST,
+                    arHighRes=ARHIGHTRES,
+                    arMarkerSize=SMALLMARKER,
+                    recordVideo=False
+                    ):
     logging.debug('Creating InertiaTechnoogyListener:')
     #tests
     if not os.path.isabs(outfile):
@@ -59,10 +63,14 @@ def startExperiment(outfile,runName,serialIMU,serialAnt,serialAR,
         logging.debug( "\n\n-------------------------------\n")
         arListener = ARListener(
             outfile,runName,
-            serialAR,highRes=arHighRes,
-            markerSize=arMarkerSize)
+            serialAR,
+            highRes=arHighRes,
+            markerSize=arMarkerSize,
+            recordVideo=recordVideo
+            )
         arListener.open()
         listeners.append(arListener)
+    logging.debug('The Listerners: {0}'.format(listeners))
     return listeners
 
 def syncListeners(listeners):

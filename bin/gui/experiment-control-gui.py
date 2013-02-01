@@ -13,15 +13,28 @@ from sofiehdfformat.core.SofiePyTableAccess import SofiePyTableAccess
 from experimentcontrol.core.control import startExperiment, syncListeners,shutDownExperiment,isCorrectFilename
 from experimentcontrol.core.Exceptions import OutFileMustBeAbsolutePath, OutFileMustBeh5Extention
 from wxAnyThread import anythread
+from sofiehdfformat.core.SofieFileUtils import exportBagData
+from subprocess import Popen
 import time
 import threading
+import traceback
+import logging
+import subprocess
+from experimentcontrol.core.experimentcontrollogging import setLogger
 
 ITERATIONS_SETTING_UP=8
 ITERATIONS_TEARING_DOWN=2
 
+UNTITLEDFILENAME='untitled.h5'
+
 STARTBUTTON_BACKGROUNDCOLOR_START=(0, 255, 0, 255)
 STARTBUTTON_BACKGROUNDCOLOR_STOP=(255,0, 0, 255)
+VIEWBUTTON_BACKGROUNDCOLOR_START=(0, 255, 0, 255)
+VIEWBUTTON_BACKGROUNDCOLOR_STOP=(255,0, 0, 255)
 STARTBUTTON_START='Start'
+VIEWBUTTON_START='View Video'
+VIEWBUTTON_WAIT='Wait'
+VIEWBUTTON_RESET='Stop'
 STARTBUTTON_WAIT='Wait'
 STARTBUTTON_STOP='Stop'
 
@@ -29,6 +42,9 @@ EXPERIMENTSTATUS_INACTIVE='INACTIVE'
 EXPERIMENTSTATUS_SETTINGUP='SETTING UP'
 EXPERIMENTSTATUS_RUNNING='DO THE EXPERIMENT NOW'
 EXPERIMENTSTATUS_TEARINGDOWN='EXPERIMENT BUSY SHUTTING DOWN'
+EXPERIMENTSTATUS_ERRORSETTINGUP='ERROR SETTING UP'
+EXPERIMENTSTATUS_ERRORTEARINGDOWN='ERROR TEARINGDOWN'
+EXPERIMENTSTATUS_ERRORRUNNING='ERROR RUNNING'
 
 def textToHtml(txt):
     # the wxHTML classes don't require valid HTML
@@ -47,10 +63,15 @@ class ExperimentControlBackground(model.Background):
     imuPort = 1234
     runName=None
     running = False
+    videoExporting = False
     
     def _updateRunList(self):
-        self.components.runList.clear()           
-        self.components.runList.insertItems(SofiePyTableAccess.getRunsInTheFile(self.filename),0)
+        self.components.runList.clear()
+        runList = list(set([self._getBaseRunName(runName) for runName in 
+                    SofiePyTableAccess.getRunsInTheFile(self.filename)
+                    if runName != '/RunMeta'
+                    ] ))      
+        self.components.runList.insertItems(runList,0)
         
     def _getPathFromDialog(self, 
                wildCard = "USB Serial device (*ttyUSB*)|*ttyUSB*|Serial device (*tty*)|*tty*|All files (*.*)|*.*"):
@@ -71,10 +92,70 @@ class ExperimentControlBackground(model.Background):
                                    str(device),'Device Problem')
                 return False
         return True
+    def _getBaseRunName(self,runName):
+        runNameSplit = runName.split('/')
+        if len(runNameSplit) >= 2:
+            return runNameSplit[1]
+        return runName
     
     def _updateGlobalExperimentFeedback(self,status):
         self.components.globalExperimentFeedback.clear()
         self.components.globalExperimentFeedback.writeText(status)
+        
+    def _getTextArea(self,textAreaName):
+        numberOflines = self.components.get(textAreaName).getNumberOfLines()
+        theText = '\n'.join([self.components.get(textAreaName).getLineText(i) 
+                   for i in range(0,numberOflines)])
+        logging.debug("GETTEXT AREA:"+theText)
+        return theText
+    
+    def _setText(self,textComponentName,theText):
+        self.components.get(textComponentName).clear()
+        if theText:
+            self.components.get(textComponentName).appendText(theText)
+        
+    def _setRunMeta(self,runName):
+        if not runName:
+            logging.debug('Run name not set.')
+            return
+        runName = self._getBaseRunName(runName)
+        runMeta = {'runName':runName,
+                    'runExperimentType': self.components.runExperimentType.getLineText(0),
+                           'runSubject':self.components.runSubject.getLineText(0),
+                           'runObject':self.components.runObject.getLineText(0),
+                           'runSuccessful':self.components.runSuccessful.checked,
+                           'runCorrupted':self.components.runCorrupted.checked,
+                           'runNotes':self._getTextArea('runNotes')
+                           }
+        logging.debug(runMeta)
+        SofiePyTableAccess.setRunMetaInFile(self.filename,runName,runMeta)
+        
+    def _getRunMeta(self,runName):
+        runMeta = SofiePyTableAccess.getRunMetaInFile(self.filename, runName)
+        if runMeta:
+            runNotes =runMeta['runNotes']
+            runSubject =runMeta['runSubject']
+            runObject =runMeta['runObject']
+            runSuccessful =runMeta['runSuccessful']
+            runCorrupted =runMeta['runCorrupted']
+            runExperimentType =runMeta['runExperimentType']
+            
+            self._setText('runExperimentType',runExperimentType)
+            self._setText('runNotes',runNotes)
+            self._setText('runSubject',runSubject)
+            self._setText('runObject',runObject)
+            self.components.runSuccessful.checked = runSuccessful
+            self.components.runCorrupted.checked = runCorrupted
+            self._setText('runExperimentType',runExperimentType)
+        else:
+            self._setText('runExperimentType',None)
+            self._setText('runNotes',None)
+            self._setText('runSubject',None)
+            self._setText('runObject',None)
+            self.components.runSuccessful.checked = False
+            self.components.runCorrupted.checked = False
+            self._setText('runExperimentType',None)
+        
             
     def on_initialize(self, event):
         # if you have any initialization
@@ -83,6 +164,8 @@ class ExperimentControlBackground(model.Background):
         self.startTitle = self.title
         self.executionThread = ExecutionThread(self)
         self.executionThread.start()
+        self.viewThread = ViewThread(self)
+        self.viewThread.start()
 
     def loadConfig(self):
         pass
@@ -107,6 +190,9 @@ class ExperimentControlBackground(model.Background):
         self.components.filename.clear()
         self.components.filename.writeText(self.filename)
         self.on_filename_closeField()
+    def on_menuFileOpen_select(self,event):
+        self.on_filename_mouseDoubleClick(event)
+        
     def on_filename_closeField(self, event=None):
         self.filename = self.components.filename.getLineText(0)
         try:
@@ -123,20 +209,35 @@ class ExperimentControlBackground(model.Background):
         self.statusBar.text = self.filename
         self._updateRunList()  
     def on_runList_mouseUp(self, event):
-        self.runName = self.components.runList.stringSelection
+        self.runName = self._getBaseRunName(self.components.runList.stringSelection)
         self.components.runName.clear()
         self.components.runName.writeText(self.runName)
-
+        self._getRunMeta(self.runName)
+    #--------------------- def on_runExperimentType_loseFocus(self, event=None):
+        #---------------------------------------- self._setRunMeta(self.runName)
+    #---------------------------- def on_runSubject_loseFocus(self, event=None):
+        #---------------------------------------- self._setRunMeta(self.runName)
+    #----------------------------- def on_runObject_loseFocus(self, event=None):
+        #---------------------------------------- self._setRunMeta(self.runName)
+    #------------------------- def on_runSuccessful_loseFocus(self, event=None):
+        #---------------------------------------- self._setRunMeta(self.runName)
+    #-------------------------- def on_runCorrupted_loseFocus(self, event=None):
+        #---------------------------------------- self._setRunMeta(self.runName)
+    #------------------------------ def on_runNotes_loseFocus(self, event=None):
+        #---------------------------------------- self._setRunMeta(self.runName)
     def on_runName_loseFocus(self, event=None):
         self.runName = self.components.runName.getLineText(0)
         if not self.runName:
             dialog.alertDialog(self,'The Run Name is not set.','Check you run name')
             return False
+        self._setRunMeta(self.runName)
         if self.filename:
-            if self.runName in SofiePyTableAccess.getRunsInTheFile(self.filename):
+            theRuns = [self._getBaseRunName(runName) for runName in SofiePyTableAccess.getRunsInTheFile(self.filename)];
+            if self.runName in theRuns:
                 dialog.alertDialog(self,'The Run Name already exists.','Check you run name')
                 return False
         return True
+    
     def on_serialImu_mouseDoubleClick(self, event):
         self.serialImu = self._getPathFromDialog()
         self.components.serialImu.writeText(self.serialImu)
@@ -144,6 +245,42 @@ class ExperimentControlBackground(model.Background):
         self.serialAr = self._getPathFromDialog(
                 wildCard = "Serial device (*video*)|*video*|All files (*.*)|*.*")
         self.components.serialAr.writeText(self.serialAr)
+        
+    def on_openInVitables_mouseClick(self,event):
+        if self.filename:
+            subprocess.Popen(["vitables", self.filename])
+    
+    @anythread 
+    def cleanViewVideo(self):
+        self.components.viewVideo.label = VIEWBUTTON_START
+        self.components.viewVideo.backgroundColor = VIEWBUTTON_BACKGROUNDCOLOR_START
+        self.components.viewVideo.enabled = True
+        self.components.viewVideo.checked = False
+        self.videoExporting = False
+
+        
+    @anythread
+    def setupViewVideo(self):
+        self.components.viewVideo.label = VIEWBUTTON_RESET
+        self.components.viewVideo.backgroundColor = VIEWBUTTON_BACKGROUNDCOLOR_STOP
+        
+    def on_viewVideo_mouseClick(self,event):
+        if not self.runName:
+            dialog.alertDialog(self,'The Run Name is not set.','Check you run name')
+            return
+        if not self.filename:
+            dialog.alertDialog(self,"The filename is not correct".\
+                format(self.filename),'Check you filename')
+            return
+        if self.components.viewVideo.checked:
+            self.videoExporting = True
+        else:
+            self.videoExporting = False
+            self.components.viewVideo.enabled = False;
+            
+    def on_saveMetaData_mouseClick(self,event):  
+         self._setRunMeta(self.runName)
+    
     def on_startStopButton_mouseClick(self,event):  
         if not self.on_runName_loseFocus():
             return False
@@ -159,6 +296,7 @@ class ExperimentControlBackground(model.Background):
             return False
         if self.components.startStopButton.checked:
             #------- dialog.alertDialog(self,'Startng RUN','Check you run name')
+            #------------------------------------ self._setRunMeta(self.runName)
             self.components.startStopButton.label = STARTBUTTON_STOP
             self.components.startStopButton.backgroundColor = STARTBUTTON_BACKGROUNDCOLOR_STOP
             self.running = True;
@@ -167,24 +305,27 @@ class ExperimentControlBackground(model.Background):
             self.running = False;
             self.components.startStopButton.label = STARTBUTTON_WAIT
             self.components.startStopButton.enabled = False;
-    def on_menuFilePrint_select(self, event):
-        # put your code here for print
-        # the commented code below is from the textEditor tool
-        # and is simply an example
-        
-        #source = textToHtml(self.components.fldDocument.text)
-        #self.printer.PrintText(source)
-        pass
-    def on_menuFilePrintPreview_select(self, event):
-        # put your code here for print preview
-        # the commented code below is from the textEditor tool
-        # and is simply an example
-        
-        #source = textToHtml(self.components.fldDocument.text)
-        #self.printer.PreviewText(source)
-        pass
-    def on_menuFilePageSetup_select(self, event):
-        self.printer.PageSetup()
+            
+    def on_verboseCheckBox_mouseClick(self,event):
+        if self.components.verboseCheckBox.checked:
+            setLogger(logging.DEBUG)
+            logging.getLogger().setLevel(logging.DEBUG)
+            print 'Verbose mode on.'
+            logging.debug('Verbose on.')
+        else:
+            logging.getLogger().setLevel(logging.CRITICAL)
+            print 'Verbose mode off.'
+            logging.debug('Verbose off.')
+            
+    def on_menuFileNew_select(self, event):
+        result = dialog.directoryDialog(self, 'Choose a directory', '')
+        if result.accepted:
+            self.filename = os.path.join(result.path,UNTITLEDFILENAME)
+            self._setText('filename',self.filename)
+            
+        else:
+            return '';
+         
     # the following was copied and pasted from the searchexplorer sample
     def on_menuEditUndo_select(self, event):
         widget = self.findFocus()
@@ -241,12 +382,24 @@ class ExperimentControlBackground(model.Background):
     def updateGlobalExperimentFeedBackInactive(self):
         self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_INACTIVE)
     @anythread 
+    def updateGlobalExperimentFeedBackErrorSettingUp(self):
+        self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_ERRORSETTINGUP)
+    @anythread 
+    def updateGlobalExperimentFeedBackErrorTearingDown(self):
+        self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_ERRORTEARINGDOWN)
+    @anythread 
+    def updateGlobalExperimentFeedBackErrorRunning(self):
+        self._updateGlobalExperimentFeedback(EXPERIMENTSTATUS_ERRORRUNNING)
+    @anythread 
     def updateStartButtonStart(self):
         self.components.startStopButton.label = STARTBUTTON_START
         self.components.startStopButton.backgroundColor = STARTBUTTON_BACKGROUNDCOLOR_START
         self.components.startStopButton.enabled = True;
         self._updateRunList()
-
+        
+    @anythread
+    def setRunning(self,trueOrFalse):
+        self.running =  trueOrFalse
 
 class ExecutionThread(threading.Thread):
     """
@@ -257,16 +410,18 @@ class ExecutionThread(threading.Thread):
         threading.Thread.__init__ (self)
     def run (self):
         print "ExecutionThread: starting loop"
-        try:
-            while True:
-                #Waiting to run
-                print 'Waiting to run.'
-                while self.experimentControlBackground.running == False:
-                    time.sleep(0.5)
-                #In A Run Cycle
-                #Setting up
-                print 'Settting Up'
-                self.experimentControlBackground.updateGlobalExperimentFeedBackSettingUp()
+       
+        while True:
+            #Waiting to run
+            print 'Waiting to run.'
+            while self.experimentControlBackground.running == False:
+                time.sleep(0.5)
+            #In A Run Cycle
+            #Setting up
+            print 'Settting Up'
+            try:
+                self.experimentControlBackground.\
+                    updateGlobalExperimentFeedBackSettingUp()
                 listeners = \
                 startExperiment(self.experimentControlBackground.filename, 
                                 self.experimentControlBackground.runName,
@@ -274,20 +429,33 @@ class ExecutionThread(threading.Thread):
                         self.experimentControlBackground.serialAnt,
                         self.experimentControlBackground.serialAr,
                         imuPort=self.experimentControlBackground.imuPort,
-                        imuHost=self.experimentControlBackground.imuHost)
+                        imuHost=self.experimentControlBackground.imuHost,
+                        recordVideo=self.experimentControlBackground.components.recordVideo.checked
+                        )
                 i=ITERATIONS_SETTING_UP;
                 while i>0:
                     time.sleep(1)
                     i -= 1
                     print '.'
-                print 'Running'
-                self.experimentControlBackground.updateGlobalExperimentFeedBackRunning()
+            except Exception as ex:
+                print 'ERROR SETTING UP:{0}'.format(str(ex))
+                self.experimentControlBackground.\
+                    updateGlobalExperimentFeedBackErrorSettingUp()
+            print 'Running'
+            try:
+                self.experimentControlBackground.\
+                    updateGlobalExperimentFeedBackRunning()
                 while self.experimentControlBackground.running == True:
                     syncListeners(listeners)
                     time.sleep(0.25)
-                #Tearing Down
-                print 'Tear down'
-                self.experimentControlBackground.updateGlobalExperimentFeedBackTearingDown()
+            except Exception as ex:
+                print 'ERROR RUNNING:{0}'.format(str(ex))
+                self.experimentControlBackground.updateGlobalExperimentFeedBackErrorRunning()
+            #Tearing Down
+            print 'Tear down'
+            try:
+                self.experimentControlBackground.\
+                    updateGlobalExperimentFeedBackTearingDown()
                 i=ITERATIONS_TEARING_DOWN;
                 while i>0:
                     time.sleep(1)
@@ -296,12 +464,71 @@ class ExecutionThread(threading.Thread):
                 print 'Stopped'
                 shutDownExperiment(listeners)
                 self.experimentControlBackground.updateStartButtonStart()
-                self.experimentControlBackground.updateGlobalExperimentFeedBackInactive()
+                self.experimentControlBackground.\
+                    updateGlobalExperimentFeedBackInactive()
                 #Clean Up
                 listeners = []
-        except:
-            print 'Excpetion caught in processing thread.';
+            except Exception as ex:
+                print 'ERROR RUNNING:{0}:\n{1}'.format(str(ex),traceback.print_exc())
+                self.experimentControlBackground.\
+                    updateGlobalExperimentFeedBackErrorTearingDown()
+                time.sleep(2)
+                self.experimentControlBackground.setRunning(False)
+                self.experimentControlBackground.updateStartButtonStart()
+                self.experimentControlBackground.\
+                    updateGlobalExperimentFeedBackInactive()
+                    
+class ViewThread(threading.Thread):
+    """
+        The View Video Thread
+    """
+    def __init__ (self, experimentControlBackground):
+        self.experimentControlBackground = experimentControlBackground
+        threading.Thread.__init__ (self)
+    def run (self):
+        print "ViewVideoThread: starting loop"
+       
+        while True:
+            #Waiting to export
+            #print 'Waiting to Export.'
+            while self.experimentControlBackground.videoExporting == False:
+                time.sleep(0.5)
+            #print 'Exporting information.'
+            self.experimentControlBackground.setupViewVideo()
+            theProcess = None
+            try:
+                exportFileName = exportBagData(self.experimentControlBackground.filename,
+                                               self.experimentControlBackground.runName)
+            except:
+                self.experimentControlBackground.cleanViewVideo()
+                continue
+            try:
+                if self.experimentControlBackground.videoExporting == True:
+                    processString = \
+                        ['roslaunch',
+                        'sofie_ros',
+                        'play_back.launch',
+                        'usbcamrosbag:='+exportFileName,
+                        'playbackspeed:='+self.experimentControlBackground.
+                            components.playBackSpeed.getLineText(0)
+                        ];
+                    logging.debug('Executing command: '+str(processString))    
+                    theProcess = Popen(processString)
+                #print 'Waiting to Start again.'
+                while self.experimentControlBackground.videoExporting == True:
+                    time.sleep(0.1)
+            except:
+                pass
+            self.experimentControlBackground.cleanViewVideo()
+            if theProcess:
+                theProcess.terminate()
             
 if __name__ == '__main__':
     app = model.Application(ExperimentControlBackground)
     app.MainLoop()
+#    while True:
+#        txt = sys.stdout.readline()
+#        if not txt: 
+#            break
+#        txt=txt.replace("\r\n","\n").replace("\r\n","\n").replace('\\\\','\\')
+#        self.components.taStdout.appendText(txt)
