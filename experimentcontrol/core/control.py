@@ -27,7 +27,7 @@ def isCorrectFilename(filename):
     if not os.path.isabs(filename):
         raise OutFileMustBeAbsolutePath
 
-def startExperiment(outfile,runName,serialIMU,serialAnt,serialAR,
+def startExperiment(outfile,runName,serialIMU,serialAnt,serialAR,serialArduino,
                     imuPort=IMUPORT,imuHost=IMUHOST,
                     arHighRes=ARHIGHTRES,
                     arMarkerSize=SMALLMARKER,
@@ -57,13 +57,14 @@ def startExperiment(outfile,runName,serialIMU,serialAnt,serialAR,
             serialAnt)
         antPlusListener.open()
         listeners.append(antPlusListener)
-    if serialAR:
+    if serialAR or serialArduino:
         logging.debug( "\n\n-------------------------------\n")
         logging.debug( "AR ENABLED")
         logging.debug( "\n\n-------------------------------\n")
         arListener = ARListener(
             outfile,runName,
             serialAR,
+            serialArduino,
             highRes=arHighRes,
             markerSize=arMarkerSize,
             recordVideo=recordVideo

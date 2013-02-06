@@ -58,6 +58,7 @@ def textToHtml(txt):
 class ExperimentControlBackground(model.Background):
     filename=None
     serialAr=None
+    serialArduino=None
     serialImu=None
     serialAnt=None
     imuHost = '127.0.0.1'
@@ -246,6 +247,10 @@ class ExperimentControlBackground(model.Background):
         self.serialAr = self._getPathFromDialog(
                 wildCard = "Serial device (*video*)|*video*|All files (*.*)|*.*")
         self.components.serialAr.writeText(self.serialAr)
+    def on_serialArduino_mouseDoubleClick(self, event):
+        self.serialArduino = self._getPathFromDialog(
+                wildCard = "USB Serial device (*ttyUSB*)|*ttyUSB*|Serial device (*tty*)|*tty*|All files (*.*)|*.*")
+        self.components.serialArduino.writeText(self.serialArduino)
         
     def on_openInVitables_mouseClick(self,event):
         if self.filename:
@@ -292,6 +297,8 @@ class ExperimentControlBackground(model.Background):
                 format(self.filename),'Check you filename')
             return
         if not self._testSerialDevice(self.serialAr,' AR DEVICE'):
+            return False
+        if not self._testSerialDevice(self.serialArduino,' ARDUINO DEVICE'):
             return False
         if not self._testSerialDevice(self.serialImu,' IMU DEVICE'):
             return False
@@ -429,6 +436,7 @@ class ExecutionThread(threading.Thread):
                         self.experimentControlBackground.serialImu,
                         self.experimentControlBackground.serialAnt,
                         self.experimentControlBackground.serialAr,
+                        self.experimentControlBackground.serialArduino,
                         imuPort=self.experimentControlBackground.imuPort,
                         imuHost=self.experimentControlBackground.imuHost,
                         recordVideo=self.experimentControlBackground.components.recordVideo.checked

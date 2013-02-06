@@ -6,7 +6,7 @@ if os.name == 'nt':
     import py2exe    
 setup (
   name = 'experimentcontrol',
-  version = '0.4.3',
+  version = '0.5.0',
   packages = find_packages(),
   install_requires=[],
   author = 'ExperimentControl Team',

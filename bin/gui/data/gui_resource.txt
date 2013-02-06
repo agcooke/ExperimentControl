@@ -78,7 +78,6 @@
          ]
      },
          'components': [
-
 {'type':'CheckBox', 
     'name':'recordVideo', 
     'position':(220, 600), 
@@ -117,7 +116,7 @@
 
 {'type':'TextField', 
     'name':'serialImu', 
-    'position':(170, 80), 
+    'position':(169, 69), 
     'size':(151, -1), 
     'editable':False, 
     'toolTip':u'Click to choose the device.', 
@@ -125,10 +124,23 @@
 
 {'type':'TextField', 
     'name':'serialAr', 
-    'position':(170, 111), 
+    'position':(170, 97), 
     'size':(151, -1), 
     'editable':False, 
     'toolTip':u'AR Device - One of the /dev/video devices.', 
+    },
+ {'type':'StaticText', 
+    'name':'arduinoDeviceLabel', 
+    'position':(65, 128), 
+    'size':(101, 13), 
+    'backgroundColor':(242, 241, 240, 255), 
+    'text':u'Arduino Device', 
+    },
+
+{'type':'TextField', 
+    'name':'serialArduino', 
+    'position':(170, 124), 
+    'size':(150, -1), 
     },
 
 {'type':'TextField', 
@@ -271,7 +283,7 @@
 
 {'type':'StaticBox', 
     'name':'h5Filename', 
-    'position':(14, 8), 
+    'position':(8, 8), 
     'size':(310, 50), 
     'backgroundColor':(242, 241, 240, 255), 
     'label':u'H5 File', 
@@ -279,22 +291,22 @@
 
 {'type':'StaticText', 
     'name':'arDeviceLabel', 
-    'position':(58, 108), 
+    'position':(103, 102), 
     'backgroundColor':(242, 241, 240, 255), 
     'text':u'AR Device', 
     },
 
 {'type':'StaticBox', 
     'name':'imuDeviceBox', 
-    'position':(14, 60), 
-    'size':(313, 86), 
+    'position':(14, 56), 
+    'size':(313, 97), 
     'backgroundColor':(242, 241, 240, 255), 
     'label':u'Device setup', 
     },
 
 {'type':'StaticText', 
     'name':'imuDeviceLabel', 
-    'position':(58, 85), 
+    'position':(93, 74), 
     'backgroundColor':(242, 241, 240, 255), 
     'text':u'IMU Device', 
     },
