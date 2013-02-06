@@ -15,6 +15,8 @@ Documentation
 The console script is not used much anymore so might not work.
 
 The gui in ./bin/gui/experiment-control-gui.py is the main entry to use the system.
+
+Installation
 ===========
 Linux:
 -------
