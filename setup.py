@@ -6,7 +6,7 @@ if os.name == 'nt':
     import py2exe    
 setup (
   name = 'experimentcontrol',
-  version = '0.4.2',
+  version = '0.4.3',
   packages = find_packages(),
   install_requires=[],
   author = 'ExperimentControl Team',
@@ -15,7 +15,10 @@ setup (
   url = 'https://github.com/agcooke/ExperimentControl',
   license = open('LICENSE.md').read(),
   long_description=open('README.md').read(),
-  data_files = [('bin',[os.path.join('bin','gui','experiment-control-gui.rsrc.py')])],
+  package_data = {
+        # If any package contains *.txt files, include them:
+        '': ['*.txt', 'data/*'],
+    },
   scripts = [os.path.join('bin','experiment-control.py'),
              os.path.join('bin','gui','experiment-control-gui.py'),
              ],

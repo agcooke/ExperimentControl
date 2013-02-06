@@ -3,6 +3,7 @@ import os
 import socket
 from time import sleep
 class InertiaTechnologySocketDriver (object):
+    """ Provides a socket driver to talk to the Inertia Technology ProMoveGUI. """
     def __init__(self,host='127.0.0.1',port=1234,device='/dev/ttyUSB0',
         mode='+'):
         '''

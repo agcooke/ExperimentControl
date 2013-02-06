@@ -1,12 +1,5 @@
 __author__="cooke"
 __date__ ="$02-Feb-2012 15:26:23$"
-
-"""
-Initialize a basic broadcast slave channel for listening to
-an ANT+ Bicycle cadence and speed senser, using raw messages
-and event handlers.
-
-"""
 import logging
 import os
 from subprocess import Popen
@@ -20,7 +13,8 @@ IMUPORT=1234
 IMUHOST='127.0.0.1'
 class IntertiaTechnologyListener(object):
     """
-    Used to start and stop the ant plus listener
+    Listener for the Inertia Technology IMU. One needs to install the PromoveGUI to be able to get this
+    working.
     """
     def __init__(self,outfile,runName,serial,port=IMUPORT,host=IMUHOST):
         self.processString = ['/usr/bin/ProMoveGUI','-p 1234'];

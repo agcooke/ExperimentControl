@@ -21,6 +21,7 @@ import traceback
 import logging
 import subprocess
 from experimentcontrol.core.experimentcontrollogging import setLogger
+from pkg_resources import resource_filename
 
 ITERATIONS_SETTING_UP=8
 ITERATIONS_TEARING_DOWN=2
@@ -524,7 +525,10 @@ class ViewThread(threading.Thread):
                 theProcess.terminate()
             
 if __name__ == '__main__':
-    app = model.Application(ExperimentControlBackground)
+    resourceString = resource_filename(__name__, 'data/gui_resource.txt')
+    #print resourceString
+    r_file = model.resource.ResourceFile(resourceString)
+    app = model.Application(ExperimentControlBackground,rsrc=r_file.getResource())
     app.MainLoop()
 #    while True:
 #        txt = sys.stdout.readline()

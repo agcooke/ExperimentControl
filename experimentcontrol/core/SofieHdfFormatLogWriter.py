@@ -15,6 +15,9 @@ EVENT_READ = '2-LOGREAD'
 EVENT_WRITE = '3-LOGWRITE'
 
 class LogWriter(object):
+    """ This provides a writer to the SOFIE HDF FORMAT system. Use with caution, Pytables
+    does not support concurrent writes to an HDF file. (Currently not used in the ExperimentControl Package.)"""
+    
     previousParsedValue = None;
 
     def __init__(self, filename='',runName='test'):

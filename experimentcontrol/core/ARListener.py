@@ -4,14 +4,17 @@ import time
 from sofiehdfformat.core.SofieFileUtils import importARData,importBagData
 from sofiehdfformat.core.config import getDefaultBagFileName,getARSubDirectory,getDefaultCSVFileName
 from sofiehdfformat.core.SofieFileUtils import cleanUpTempDirectory,createTempAndFileDirectory
-import os, tempfile
 SMALLMARKER=12.0
 BIGMARKER=10.0
 USBCAMERATOPIC='/usb_cam/image_raw'
 
 class ARListener(object):
     """
-    Used to start and stop the ant plus listener
+    Used to start and stop the Augemente Reality listener: The Ros project [sofie_ros](https://github.com/agcooke/sofie_ros)
+    handles this.
+    
+    - The AR Tracker runs from here
+    - Other arduino sensors will have to be added to this package.
     """
     def __init__(self,outfile,runName,videoDevice,highRes=False,markerSize=SMALLMARKER,
                  recordVideo=False):
