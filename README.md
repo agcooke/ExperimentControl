@@ -7,7 +7,7 @@ Python package that is used to manage sensors and experiment process within the 
 Contact
 -------
 Contact via:
-    adrian "dot" cooke {at} u t wente 'dot' nl with all the correct symbols
+    vera "dot" bulsink {at} u t wente 'dot' nl with all the correct symbols
 replaced and whitespace removed.
 
 Documentation
