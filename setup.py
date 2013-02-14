@@ -8,7 +8,7 @@ setup (
   name = 'experimentcontrol',
   version = '0.5.0',
   packages = find_packages(),
-  install_requires=['wxAnyThread','vitables'],
+  install_requires=['wxAnyThread'],
   author = 'ExperimentControl Team',
   author_email = 'adrian "dot" cooke {at} u t wente <dot> nl',
   description = 'USB Ant plust listener, IMU listerner and experiment run organiser.',
